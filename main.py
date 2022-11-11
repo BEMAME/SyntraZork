@@ -63,7 +63,6 @@ class GameC:
                 player.currentRoom = roomFromCoor(self.coor)
                 return True, player.currentRoom.enter()
             else:
-                print(self.coor)
                 return True, player.currentRoom
         else:
             print(f"You cannot go that way.")
@@ -80,22 +79,30 @@ class GameC:
 
     def optionsInp(self):  # various meta-options. Return true/false is for checking if valid input given
         if inp.split()[0].lower() not in ["help", "coor", "where", "location", "score", "points", "i", "inv",
-                                          "inventory", "backpack"]:
+                                          "inventory", "backpack","drink","eat","share"]:
             return False
 
         if inp.lower() == "help":
             Game.helpMenu()
             return True
 
-        if inp.lower() in ["coor", "where", "location"]:
+        if inp.split()[0].lower() in ["drink","eat"]:
+            print('Try "use" to consume food or drinks.')
+            return True
+
+        elif inp.lower() == "share coffee" and player.currentRoom.name=="room105":
+            shareCoffee.complete()
+            return True
+
+        elif inp.lower() in ["coor", "where", "location"]:
             print(f"{player.currentRoom.shortT} Your coordinates are {Game.coor}.")
             return True
 
-        if inp.lower() in ["score", "points"]:
+        elif inp.lower() in ["score", "points"]:
             player.prtScore()
             return True
 
-        if inp.lower() in ["i", "inv", "inventory", "backpack"]:
+        elif inp.lower() in ["i", "inv", "inventory", "backpack"]:
             player.inventory()
             return True
 
@@ -120,7 +127,6 @@ class GameC:
             elif x in player.currentRoom.lookL and x in roomCoorD.values():
                 str_to_class(x).lookAt()
             elif x in player.inv:
-                print("You have a look in your backpack.")
                 str_to_class(x).look()
             elif x in player.currentRoom.lookL:  # entities that cannot be taken (e.g. lobby display)
                 str_to_class(x).look()
@@ -128,8 +134,6 @@ class GameC:
                 print(player.currentRoom.takeD[x])
             else:
                 print("I don't understand what you want to look at.")
-
-
 
         return True
 
@@ -161,14 +165,14 @@ class GameC:
 
         elif len(inp.split()) == 2:
             x = self.synonymCheck(inp.split()[1].lower())
-
             if isinstance(x,str) is False:
                 print("I don't understand what you want to take.")
 
-            if x in player.inv:
+            elif x in player.inv:
                 print(f"You already have the {inp.split()[1].lower()}!")
 
-            elif x in player.currentRoom.takeD:  # triggers if the item is in the dict of valid items for taking.
+
+            elif x in player.currentRoom.takeD.keys():  # triggers if the item is in the dict of valid items for taking.
                 str_to_class(x).take()
                 return True
 
@@ -178,20 +182,20 @@ class GameC:
                           f" not some sort of strongman jock!")
                     hurtEgo.complete()
                 else:
-                    print(f"There are no {inp.split()[1].lower()}s for you to take...")
+                    print(f"I'm not sure how you would grab the {inp.split()[1].lower()} from here...")
 
             # an easter egg objective
             elif inp.split()[1].lower() == "points":
                 getPoints.complete()
 
-            else:
-                print(f"{str_to_class(x).name.capitalize()}s are not for the taking.")
-
         return True
 
     def useInp(self):
+
         if inp.split()[0].lower() not in ["use"]:
             return False
+
+
 
         if len(inp.split()) == 1:
             print(f"What do you want to {inp.split()[0].lower()}?")
@@ -233,7 +237,7 @@ class GameC:
         if "beer" in player.inv:
             print(f"After a long day you're finally home!\n"
                   f"You sit down on your couch and crack open the heavy beer you got from the bar.")
-            player.changeScore(3)
+            player.changeScore(4)
 
             input("\n(press Enter to continue)")
 

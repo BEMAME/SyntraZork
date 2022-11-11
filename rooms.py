@@ -111,7 +111,7 @@ class Hallway(Room):
 
 
 class lockedRoom(Room):
-    def __init__(self,coor,name,synonyms,shortT="",longT="",lookL=[],exitsL=[],locked=True,
+    def __init__(self,coor,name,synonyms,useL=[],askL=[],takeD={},shortT="",longT="",lookL=[],exitsL=[],locked=True,
                  lookAtT="The lights are off - too dark to make anything out..."):
         self.coor = coor
         self.name = name
@@ -119,7 +119,10 @@ class lockedRoom(Room):
         self.longT = longT
         self.lookL = lookL
         self.exitsL = exitsL
+        self.useL = useL
         self.locked = locked
+        self.askL = askL
+        self.takeD = takeD
         self.lookAtT = lookAtT
         self.synonyms = synonyms
         self.synonyms.append(self.name)
@@ -301,7 +304,7 @@ toilets = Room(
     name="toilets",
     coor=(1,1,1),
     shortT= "You enter the lavatory.",
-    longT="You can [use] the toilets here."
+    longT="> You can use the toilets here.\n"
           "To your west is the stairwell. It's the only exit.",
     lookL=["toilet"],
     exitsL = ["w"],
@@ -375,9 +378,17 @@ room104 = lockedRoom(
 room105 = lockedRoom(
     name="room105",
     coor=(1,-1,1),
+    shortT= "You are in the breakroom.",
+    longT= "There's a large aluminium dispenser on the table, as well as several cups.\n"
+           "The other student is looking at the dispenser as if they hold a grudge against it.",
+    lookL= ["dispenser","student"],
+    askL=["student"],
+    useL=["dispenser"],
+    takeD={"cup": "Next to the dispenser are several cups."},
     synonyms=["105"],
+    exitsL=["w"],
     lookAtT="The lights are on, but nobody's there.\n"
-            "You spot a large coffee dispenser on one of the tables."
+            "You spot a large, insulated dispenser on one of the tables, alongside some cups."
 )
 room106 = lockedRoom(
     name="room106",

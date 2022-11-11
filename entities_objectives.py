@@ -35,9 +35,21 @@ class Entity:
                 drinkCoffee.complete()
                 player.drinks += 1
                 player.bladderCheck()
+                if player.currentRoom.name=="room105" and shareCoffee.done is False:
+                    print('The other student looks up from his sad cup of cold tea.\n'
+                          '"Oh man, wish I had some of that... Care to [share]?"')
+            if self.name == "tea":
+                drinkTea.complete()
+                player.drinks += 1
+                player.bladderCheck()
+            elif self.name == "dispenser":
+                if "cup" in player.inv:
+                    player.inv.remove("cup")
+                getTea.complete()
+                player.inv.add("tea")
             elif self.name == "beer":
                 player.drinks += 3
-                if player.classComplete is True:
+                if player.classComplete is True or player.currentRoom.name=="room105":
                     drinkBeerAfter.complete()
                 else:
                     drinkBeer.complete()
@@ -83,7 +95,8 @@ class Thing(Entity):
             player.inv.remove("bottle")
             getCoffee.complete()
         else:
-            print(f"You put the {self.name} in your backpack.")
+            print(f"You pick up the {self.name}.\n"
+                  f"> You have a {self.name}!")
 
         player.inv.add(self.name)  # put item in inventory
 
@@ -99,9 +112,9 @@ class Person(Entity):
 
     def ask(self):
         from rooms import bar
-        if bladderFull.done is True:
+        if player.drinks > 3:
             print(f"You ask the {self.name} where the toilets are.\n"
-                  f'"First floor, east."')
+                  f'"First floor, east from the stairwell." You thank them for this critical information.')
         elif self.name == "receptionist" and findClassRoom.done is False:
             print(self.askT)
             findClassRoom.complete()
@@ -115,6 +128,9 @@ class Person(Entity):
             print(f"You ask the {self.name} where the breakroom is. "
                   '"Oh ofcourse! Room 105."')
             findBreakRoom.complete()
+        elif self.name == "student":
+            print(self.askT)
+            studentChat.complete()
         else:
             print(self.askT)
 
@@ -122,7 +138,7 @@ class Person(Entity):
 
 class Protagonist:
     def __init__(self, currentRoom="lobby", classComplete=False, nStairsClimbed=0,
-                 score=0, drinks=0, inv={"laptop","bottle"}):
+                 score=0, drinks=0, inv={"laptop","bottle","key"}): #todo remove key
         self.currentRoom = currentRoom
         self.classComplete = classComplete
         self.nStairsClimbed = nStairsClimbed
@@ -150,13 +166,12 @@ class Protagonist:
         print(f"Your score is {self.score}.")
 
     def bladderCheck(self):
-        if player.drinks > 3:
+        if 5 >= player.drinks > 3:
             bladderFull.complete()
 
         elif player.drinks > 5:
             bladderDisaster.complete()
             player.drinks = 0
-
 
 player = Protagonist()
 
@@ -239,6 +254,26 @@ breakroomOpened = Objective(
     repeatable=False
 )
 
+studentChat = Objective(
+    completeT="The other student immediately perks up in excitement, and starts rattling off\n"
+              "their top-10 favourite PyCharm hotkeys.\n"
+              "> You learned a few useful Python tricks!",
+    score=2,
+    completeRoom=["room105"],
+    repeatable=False,
+    confirmT="You ask the student for more tips. Their tell you a few more incoherent factoids \n"
+             "about Python, but nothing you could put to work."
+)
+
+shareCoffee = Objective(
+    completeT="You share your coffee with the student.\n"
+              f'"Gee, thanks! So much better than that cold tea..."',
+    score=2,
+    completeRoom=["room105"],
+    repeatable=False,
+    confirmT="You fill up the student's cup once more."
+)
+
 getBeer = Objective(
     completeT="Without a word, the barkeep gives you one of the heavy beers on display.\n"
               "> You have a beer! Remember to drink responsibly.",
@@ -253,6 +288,25 @@ getCoffee = Objective(
     completeRoom=["ANY"]
 )
 
+getTea = Objective(
+    completeT="You take a cup and fill it.\n"
+              "The dispenser is cold to the touch.\n"
+              "> You have a cup of cold tea!",
+    score=0,
+    completeRoom=["room105"],
+    repeatable=True,
+    repeatT="You convince yourself the cold tea isn't so bad after all.\n"
+            "> You have a fresh cup of cold tea!",
+    repeatScore=0
+)
+
+drinkTea = Objective(
+    completeT="The tea does nothing for you.",
+    score=0,
+    completeRoom=["ANY"],
+    repeatable=False,
+    confirmT="You reluctantly have another sip of the cold tea."
+)
 drinkCoffee = Objective(
     completeT="The coffee peps you up.",
     score=1,
@@ -272,11 +326,11 @@ drinkBeer = Objective(
 )
 
 drinkBeerAfter = Objective(
-    completeT="In celebration of finishing the classes, you crack open the beer.\n"
+    completeT="In celebration of what you've learned so far, you crack open the beer.\n"
               "After you finish your drink, you feel slightly embarrassed for impulsively\n"
-              " consuming alcohol within the Syntra building."
+              " consuming alcohol within the Syntra building.\n"
               "> You chose a somewhat unfortunate time for consuming alcohol...",
-    score=-3,
+    score=1,
     completeRoom=["ANY"],
     repeatable=False,
     confirmT=""
@@ -296,7 +350,7 @@ bladderFull = Objective(
     score=0,
     completeRoom=["ANY"],
     repeatable=True,
-    repeatScore=-1,
+    repeatScore=0,
     repeatT="Although your bladder is already completely full, you decide to fill it up further.\n"
             "> This may end in disaster..."
 )
@@ -315,7 +369,7 @@ bladderDisaster = Objective(
 bladderRelief = Objective(
     completeT="You feel relieved.",
     score=1,
-    completeRoom=["Toilets"],
+    completeRoom=["toilets"],
     repeatable=True,
     repeatScore=0,
     repeatT="You have another quick tinkle. Better safe than sorry!"
@@ -369,7 +423,7 @@ laptop = Thing(name="laptop",
 
 bottle = Thing(name="bottle",
                lookT="Your faithful old Thermos bottle. It's mostly empty, just a splash of cold coffee remains.",
-               synonyms=["thermos","cup"],
+               synonyms=["thermos"],
                useT="No matter how hard you slurp, you can't seem to get the last few drops of cold coffee out.",
                consumeOnUse=False)
 
@@ -391,6 +445,23 @@ coffee = Thing(name="coffee",
                synonyms=[],
                consumeOnUse=False)
 
+dispenser = Thing(name="dispenser",
+            lookT='It is labeled "TEA", in big shouty letters.',
+            useT="",
+            synonyms=[]
+            )
+
+cup = Thing(name="cup",
+            lookT="An empty cup.",
+            useT="> What will you use to fill up your cup?",
+            synonyms=[])
+
+tea = Thing(name="tea",
+            lookT="You peer into your sad cup of cold tea.",
+            useT="You drink the cold tea.",
+            synonyms=[],
+            consumeOnUse=True)
+
 beer = Thing(name="beer",
              lookT="A specialty beer. Is this the right time to open it?",
              useT="You drink the beer.",
@@ -404,3 +475,16 @@ toilet = Entity(name="toilet",
                synonyms=["lavatory","wc"],
                useT=""
                )
+
+student = Person(name="student",
+                 helloT="Hi. Word of warning about the tea: it's cold.",
+                 lookT="The student takes a sip from their cup of tea. It's clear they are not enjoying it.",
+                 synonyms=[],
+                 askT="You ask the other student about their experience with Python.")
+
+teacher = Person(name="teacher",
+                 helloT="Welcome!",
+                 lookT="The teacher looks up at you.",
+                 synonyms=[],
+                 askT="You ask a poignant question about Python.")
+
