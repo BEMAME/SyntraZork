@@ -5,15 +5,14 @@ print("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 from rooms import *
 
 class GameC:
-    gameOver = False
-
-    def __init__(self, gameStart=True):
+    def __init__(self, coor=[0,0,0], gameStart=True):
+        self.coor = coor
         self.gameStart = gameStart
 
     def synonymCheck(self, inputVal):
         try:
-            x = [target for target, syn in entitySyn.items() if inputVal in syn][0]
-            return x  # this returns the key of the entitySyn dictionary
+            x = [target for target, syn in synonymsD.items() if inputVal in syn][0]
+            return x  # this returns the key of the synonymsD dictionary
         except:
             None
 
@@ -31,7 +30,7 @@ class GameC:
               "[take <object>] to pick up an object.\n"
               "[i] to show a list of items that are in your backpack.\n"
               "[score] to display your current score\n"
-              "[q] to quit")
+              "Walk outside of the building to quit")
 
     def walkInp(self):  # Returns new room if valid direction input,
                         # returns true/false is for checking if valid input given
@@ -42,22 +41,30 @@ class GameC:
             return False, player.currentRoom
 
         if player.currentRoom.checkIfPresent(inp,player.currentRoom.exitsL):
+            tryCoor = self.coor.copy()
             if inp.lower() == "n":
-                coor[1] = coor[1]+1
-            if inp.lower() == "e":
-                coor[0] = coor[0]+1
-            if inp.lower() == "s":
-                coor[1] = coor[1]-1
-            if inp.lower() == "w":
-                coor[0] = coor[0]-1
-            if inp.lower() == "u":
-                coor[2] = coor[2]+1
+                tryCoor[1] = tryCoor[1]+1
+            elif inp.lower() == "e":
+                tryCoor[0] = tryCoor[0]+1
+            elif inp.lower() == "s":
+                tryCoor[1] = tryCoor[1]-1
+            elif inp.lower() == "w":
+                tryCoor[0] = tryCoor[0]-1
+            elif inp.lower() == "u":
+                tryCoor[2] = tryCoor[2]+1
                 player.currentRoom.climbStairsExhaustion()
-            if inp.lower() == "d":
-                coor[2] = coor[2]-1
-            if inp.lower() == "go home":  # this can only be selected from the "Outside" room
+            elif inp.lower() == "d":
+                tryCoor[2] = tryCoor[2]-1
+            elif inp.lower() == "go home":  # this can only be selected from the "Exit" room
                 Game.endGame()
-            return True, player.currentRoom.enter()
+
+            if roomFromCoor(tryCoor).tryEnter() is True:
+                self.coor = tryCoor.copy()
+                player.currentRoom = roomFromCoor(self.coor)
+                return True, player.currentRoom.enter()
+            else:
+                print(self.coor)
+                return True, player.currentRoom
         else:
             print(f"You cannot go that way.")
             return True,player.currentRoom
@@ -81,7 +88,7 @@ class GameC:
             return True
 
         if inp.lower() in ["coor", "where", "location"]:
-            print(f"{player.currentRoom.shortT} Your coordinates are {coor}.")
+            print(f"{player.currentRoom.shortT} Your coordinates are {Game.coor}.")
             return True
 
         if inp.lower() in ["score", "points"]:
@@ -105,7 +112,14 @@ class GameC:
         # player typed "look <something>"
         elif len(inp.split()) == 2:
             x = self.synonymCheck(inp.split()[1].lower())
-            if x in player.inv:           # items that have been picked up
+
+            #special
+            if inp.split()[1].lower() == "inside" and type(player.currentRoom).__name__ == "Hallway":
+                x = f"room{player.currentRoom.name[-3:]}"
+                str_to_class(x).lookAt()
+            elif x in player.currentRoom.lookL and x in roomCoorD.values():
+                str_to_class(x).lookAt()
+            elif x in player.inv:
                 print("You have a look in your backpack.")
                 str_to_class(x).look()
             elif x in player.currentRoom.lookL:  # entities that cannot be taken (e.g. lobby display)
@@ -113,7 +127,9 @@ class GameC:
             elif x in player.currentRoom.takeD:  # things that are laying in the room but haven't been picked up
                 print(player.currentRoom.takeD[x])
             else:
-                print("I don't understand what you want to look at. Are you sure it is visible?")
+                print("I don't understand what you want to look at.")
+
+
 
         return True
 
@@ -149,6 +165,9 @@ class GameC:
             if isinstance(x,str) is False:
                 print("I don't understand what you want to take.")
 
+            if x in player.inv:
+                print(f"You already have the {inp.split()[1].lower()}!")
+
             elif x in player.currentRoom.takeD:  # triggers if the item is in the dict of valid items for taking.
                 str_to_class(x).take()
                 return True
@@ -159,12 +178,7 @@ class GameC:
                           f" not some sort of strongman jock!")
                     hurtEgo.complete()
                 else:
-                    print(f"{inp.split()[1].lower().capitalize()}s are not for the taking.")
-                return True
-
-            elif x in player.inv:
-                print(f"You already have the {inp.split()[1].lower()}!")
-                return True
+                    print(f"There are no {inp.split()[1].lower()}s for you to take...")
 
             # an easter egg objective
             elif inp.split()[1].lower() == "points":
@@ -190,7 +204,7 @@ class GameC:
             if x in player.inv or x in player.currentRoom.useL:
                 str_to_class(x).use()
 
-            elif x in entitySyn:
+            elif x in synonymsD:
                 print(f"You don't have {n} {inp.split()[1].lower()}.")
 
             else:
@@ -223,6 +237,13 @@ class GameC:
 
             input("\n(press Enter to continue)")
 
+        if "key" in player.inv:
+            print(f"A few days later you find the key with the massive keychain in your backpack.\n"
+                  f"> Whoops! You forgot to return the key!")
+            player.changeScore(-1)
+
+            input("\n(press Enter to continue)")
+
         print(f"\n ~~You finished the game with a score of {player.score}! Thanks for playing!")
 
         self.gameOver = True
@@ -235,7 +256,7 @@ while True:
     # setting up the very first room at the start of the game...
     if Game.gameStart is True:
         print("------------------------------------------------------------------------------------------------------")
-        player.currentRoom = roomFromCoor(coor)
+        player.currentRoom = roomFromCoor(Game.coor)
         print("A few weeks ago, you registered for the Syntra 'Python for Beginners' class.\n"
               "Full of excitement you enter the Syntra lobby. Classes start in 5 minutes.\n"
               "You should [look] around to find out where to go.")

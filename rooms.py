@@ -1,7 +1,6 @@
 import sys
 from entities_objectives import *
 
-coor = [0,0,0]  # coordinates x,y,z
 roomCoorD = {}  # a dictionary with all the rooms and their coordinates, populated by room(__init__)
 
 def list2tuple(x):
@@ -18,17 +17,22 @@ def roomFromCoor(coor):
     return currentRoom
 
 class Room:
-    def __init__(self,name,coor,shortT,longT,lookL,exitsL,useL=[],askL=[],takeD={}):
+    def __init__(self,name,coor,shortT,longT,lookL,exitsL,synonyms,lookAtT="",locked=False,useL=[],askL=[],takeD={}):
         self.name = name
         self.coor = coor
         self.shortT = shortT
         self.longT = longT
         self.lookL = lookL
+        self.lookAtT = lookAtT
+        self.locked = locked
         self.useL = useL
         self.askL = askL
         self.takeD = takeD
         self.exitsL = exitsL
+        self.synonyms = synonyms
+        self.synonyms.append(self.name)
         roomCoorD[self.coor] = self.name
+        synonymsD[self.name] = self.synonyms
 
     def checkIfPresent(self,ele,rList):
         return True if ele in rList else False
@@ -38,13 +42,20 @@ class Room:
         if self.takeD:
             [print(values) for values in self.takeD.values()] #if there are valid items, will print description
 
+    def lookAt(self):  # a function for looking at a room from the outside
+        print(self.lookAtT)
+
+    def tryEnter(self):
+        if self.locked is True:
+            print("The door is locked.")
+            return False  # cannot enter
+        else:
+            return True
+
     def enter(self): #enters the new room, prints the new room's name and looks around
-        currentRoom = roomFromCoor(coor)
-        print(currentRoom.shortT)
-        print(currentRoom.longT)
-        return currentRoom
-
-
+        print(self.shortT)
+        print(self.longT)
+        return str_to_class(self.name)
 
 
 class Stairs(Room):
@@ -58,20 +69,24 @@ class Stairs(Room):
 
 
 class Hallway(Room):
-    def __init__(self,name,coor,exitsL,takeD={},
-                 classroomLocked=True,
-                 lookL=[],useL=["key"], shortT = "You are in a hallway.", longT=""):
+    def __init__(self,name,coor,exitsL,synonyms,takeD={},
+                 lookL=[],useL=["key"], shortT = "You are in a hallway.", longT="",
+                 locked=False):
         self.name = name
         self.coor = coor
         self.classroomNumber = self.name[-3:]
-        self.classroomLocked = classroomLocked
         self.useL = useL
         self.lookL = lookL
         self.shortT = shortT
         self.longT = longT
         self.exitsL = exitsL
-        roomCoorD[self.coor] = self.name
+        self.locked = locked
         self.takeD = takeD
+        self.synonyms = synonyms
+        self.synonyms.append(self.name)
+        roomCoorD[self.coor] = self.name
+        synonymsD[self.name] = self.synonyms
+
 
         if self.name.endswith("1"):
             self.longT=f"To your north is classroom {self.classroomNumber}.\n" \
@@ -84,132 +99,187 @@ class Hallway(Room):
             self.longT=f"To your north is classroom {self.classroomNumber}.\n" \
                   f"This is the end of the hallway. You can go back east."
         elif self.name.endswith("4"):
-            self.longT=f"To your west is classroom {self.classroomNumber}.\n" \
+            self.longT=f"To your east is classroom {self.classroomNumber}.\n" \
                   f"To your north is the stairwell.\n" \
                   f"The hallway continues to your south."
         elif self.name.endswith("5"):
-            self.longT=f"To your west is classroom {self.classroomNumber}.\n" \
+            self.longT=f"To your east is classroom {self.classroomNumber}.\n" \
                   f"The hallway continues to your north and to your south."
         elif self.name.endswith("6"):
-            self.longT=f"To your west is classroom {self.classroomNumber}.\n" \
+            self.longT=f"To your east is classroom {self.classroomNumber}.\n" \
                   f"This is the end of the hallway. You can go back north."
 
+
+class lockedRoom(Room):
+    def __init__(self,coor,name,synonyms,shortT="",longT="",lookL=[],exitsL=[],locked=True,
+                 lookAtT="The lights are off - too dark to make anything out..."):
+        self.coor = coor
+        self.name = name
+        self.shortT = shortT
+        self.longT = longT
+        self.lookL = lookL
+        self.exitsL = exitsL
+        self.locked = locked
+        self.lookAtT = lookAtT
+        self.synonyms = synonyms
+        self.synonyms.append(self.name)
+        roomCoorD[self.coor] = self.name
+        synonymsD[self.name] = self.synonyms
+
+    def lookAt(self):
+        print(f"You peer through the window of room {self.name[-3:]}.")
+        print(self.lookAtT)
+
+        #special
+        if self.name == "room105" and findBreakRoom.done is False:
+            findBreakRoom.complete()
 
 #FIRST FLOOR HALLWAYS
 hallway101 = Hallway(
     name="hallway101",
     coor=(-1,1,1),
-    exitsL=["e","w","n"]
+    exitsL=["e","w","n"],
+    synonyms=[],
+    lookL=["room101"]
 )
 
 hallway102 = Hallway(
     name="hallway102",
     coor=(-2,1,1),
-    exitsL=["e","w","n"]
+    exitsL=["e","w","n"],
+    synonyms=[],
+    lookL=["room102"]
 )
 
 hallway103 = Hallway(
     name="hallway103",
     coor=(-3,1,1),
-    exitsL=["e","n"]
+    exitsL=["e","n"],
+    lookL=["room103"],
+    synonyms=[]
 )
 
 hallway104 = Hallway(
     name="hallway104",
     coor=(0,0,1),
-    exitsL=["e","s","n"]
+    exitsL=["e","s","n"],
+    synonyms=[],
+    lookL=["room104"]
 )
 
 hallway105 = Hallway(
     name="hallway105",
     coor=(0,-1,1),
-    exitsL=["e","s","n"]
+    exitsL=["e","s","n"],
+    synonyms=[],
+    lookL=["room105"]
 )
 
 hallway106 = Hallway(
     name="hallway106",
     coor=(0,-2,1),
-    exitsL=["e","n"]
+    exitsL=["e","n"],
+    synonyms=[],
+    lookL=["room106"]
 )
 
 #SECOND FLOOR HALLWAYS
 hallway201 = Hallway(
     name="hallway201",
     coor=(-1,1,2),
-    exitsL=["e","w","n"]
+    exitsL=["e","w","n"],
+    synonyms=[],
+    lookL=["room201"]
 )
 
 hallway202 = Hallway(
     name="hallway202",
     coor=(-2,1,2),
-    exitsL=["e","w","n"]
+    exitsL=["e","w","n"],
+    synonyms=[],
+    lookL=["room202"]
 )
 
 hallway203 = Hallway(
     name="hallway203",
     coor=(-3,1,2),
-    exitsL=["e","n"]
+    exitsL=["e","n"],
+    synonyms=[],
+    lookL=["room203"]
 )
 
 hallway204 = Hallway(
     name="hallway204",
     coor=(0,0,2),
-    exitsL=["e","s","n"]
+    exitsL=["e","s","n"],
+    synonyms=[],
+    lookL=["room204"]
 )
 
 hallway205 = Hallway(
     name="hallway205",
     coor=(0,-1,2),
-    exitsL=["e","s","n"]
+    exitsL=["e","s","n"],
+    synonyms=[],
+    lookL=["room205"]
 )
 
 hallway206 = Hallway(
     name="hallway206",
     coor=(0,-2,2),
-    exitsL=["e","n"]
+    exitsL=["e","n"],
+    synonyms=[],
+    lookL=["room206"]
 )
-
-
 
 #THIRD FLOOR HALLWAYS
 hallway301 = Hallway(
     name="hallway301",
     coor=(-1,1,3),
-    exitsL=["e","w","n"]
+    exitsL=["e","w","n"],
+    synonyms=[],
+    lookL=["room301"]
 )
 
 hallway302 = Hallway(
     name="hallway302",
     coor=(-2,1,3),
-    exitsL=["e","w","n"]
+    exitsL=["e","w","n"],
+    synonyms=[],
+    lookL=["room302"]
 )
 
 hallway303 = Hallway(
     name="hallway303",
     coor=(-3,1,3),
-    exitsL=["e","n"]
+    exitsL=["e","n"],
+    synonyms=[],
+    lookL=["room303"]
 )
 
 hallway304 = Hallway(
     name="hallway304",
     coor=(0,0,3),
-    exitsL=["e","s","n"]
+    exitsL=["e","s","n"],
+    synonyms=[],
+    lookL=["room304"]
 )
 
 hallway305 = Hallway(
     name="hallway305",
     coor=(0,-1,3),
-    exitsL=["e","s","n"]
+    exitsL=["e","s","n"],
+    synonyms=[],
+    lookL=["room305"]
 )
 
 hallway306 = Hallway(
     name="hallway306",
     coor=(0,-2,3),
-    exitsL=["e","n"]
+    exitsL=["e","n"],
+    synonyms=[],
+    lookL=["room306"]
 )
-
-
-
 
 lobby = Room(
     name="lobby",
@@ -220,10 +290,11 @@ lobby = Room(
           "To the north is an ascending staircase to the first floor.\n"
           "To the south is the exit of the building.\n"
           "There is a bar to your west.",
-    lookL = ["receptionist","bar","exit","display"],
-    askL = ["receptionist"],
-    takeD = {"pen":"A Syntra-branded pen is laying on the reception desk."},
-    exitsL = ["n","s","w"]
+    lookL=["receptionist","bar","exit","display"],
+    askL=["receptionist"],
+    takeD={"pen": "A Syntra-branded pen is laying on the reception desk."},
+    exitsL=["n","s","w"],
+    synonyms=[]
 )
 
 toilets = Room(
@@ -234,10 +305,9 @@ toilets = Room(
           "To your west is the stairwell. It's the only exit.",
     lookL=["toilet"],
     exitsL = ["w"],
-    useL=["toilet"]
+    useL=["toilet"],
+    synonyms=[]
 )
-
-
 
 stairs0 = Stairs(
     name="stairs0",
@@ -246,9 +316,11 @@ stairs0 = Stairs(
     longT = "To your south is the Lobby.\n"
             "The classrooms are upstairs.",
     lookL = [],
-    exitsL = ["s","u"]
+    exitsL = ["s","u"],
+    synonyms=[]
 )
 
+#Stairs objects are folded because they are boring.
 stairs1 = Stairs(
     name="stairs1",
     coor=(0,1,1),
@@ -259,17 +331,9 @@ stairs1 = Stairs(
             "There are more classrooms upstairs.\n"
             "If you head down you will be in the ground floor stairwell which leads into the lobby.",
     lookL = [],
-    exitsL = ["s","e","w","u","d"]
+    exitsL = ["s","e","w","u","d"],
+    synonyms=[]
 )
-
-#pythonClassroom = Room(
- #   name="pythonClassroom",
-  #  coor=
-#)
-
-#otherClassroom = Room(
- #   name = "otherClassroom",
-#)
 
 stairs2 = Stairs(
     name="stairs2",
@@ -280,7 +344,8 @@ stairs2 = Stairs(
             "There are more classrooms upstairs.\n"
             "You can take the steps back down to the first floor.",
     lookL = [],
-    exitsL = ["s","w","u","d"]
+    exitsL = ["s","w","u","d"],
+    synonyms=[]
 )
 
 stairs3=Stairs(
@@ -291,19 +356,86 @@ stairs3=Stairs(
             "Classrooms 301-303 are to your west.\n"
             "Classrooms 304-306 are to your south.\n"
             "You can take the steps back down to the second floor.",
-    lookL = [],
-    exitsL = ["s","w","d"]
+    lookL=[],
+    exitsL = ["s","w","d"],
+    synonyms=[]
 )
 
-outside = Room(
-    name="outside",
+#closed classrooms
+room103 = lockedRoom(
+    name="room103",
+    coor=(-3,2,1),
+    synonyms=["103"]
+)
+room104 = lockedRoom(
+    name="room104",
+    coor=(1,0,1),
+    synonyms=["104"]
+)
+room105 = lockedRoom(
+    name="room105",
+    coor=(1,-1,1),
+    synonyms=["105"],
+    lookAtT="The lights are on, but nobody's there.\n"
+            "You spot a large coffee dispenser on one of the tables."
+)
+room106 = lockedRoom(
+    name="room106",
+    coor=(1,-2,1),
+    synonyms=["106"]
+)
+room202 = lockedRoom(
+    name="room202",
+    coor=(-2,2,2),
+    synonyms=["202"]
+)
+room204 = lockedRoom(
+    name="room204",
+    coor=(1,0,2),
+    synonyms=["204"]
+)
+room205 = lockedRoom(
+    name="room205",
+    coor=(1,-1,2),
+    synonyms=["205"]
+)
+room206 = lockedRoom(
+    name="room206",
+    coor=(1,-2,2),
+    synonyms=["206"]
+)
+room302 = lockedRoom(
+    name="room302",
+    coor=(-2,2,3),
+    synonyms=["302"]
+)
+room301 = lockedRoom(
+    name="room301",
+    coor=(-1,2,3),
+    synonyms=["301"]
+)
+room304 = lockedRoom(
+    name="room304",
+    coor=(1,0,3),
+    synonyms=["304"]
+)
+room306 = lockedRoom(
+    name="room306",
+    coor=(1,-2,3),
+    synonyms=["306"]
+)
+
+exit = Room(
+    name="exit",
     coor=(0,-1,0),
     shortT="You exit the building.",
     longT="You breathe in the fresh air.\n"
           "To your north is the Syntra building.\n"
           "You contemplate if you should [go home]'.",
     lookL=[],
-    exitsL=["n", "go home"]
+    lookAtT="You look at the automatic doors. You came in this way.",
+    exitsL=["n", "go home"],
+    synonyms=[]
 )
 
 bar = Room(
@@ -317,5 +449,8 @@ bar = Room(
     askL=["barista"],
     exitsL=["e"],
     takeD={"coffee": "There's a massive espresso machine in the back.",
-           "beer": "A variety of beers are on display."}
+           "beer": "A variety of beers are on display."},
+    lookAtT= "You pick up the faint smell of freshly ground coffee. The bar is open.",
+    synonyms=["cafe","café","pub"]
+
 )

@@ -1,4 +1,4 @@
-entitySyn = {}  # dict with synonyms for all entities, is populated by entity init
+synonymsD = {}  # dict with synonyms for all entities, is populated by entity init
 
 
 class Entity:
@@ -11,17 +11,20 @@ class Entity:
         self.consumeOnUse = consumeOnUse
         self.useRoom = useRoom
         self.useT = useT
-        entitySyn[self.name] = self.synonyms  # this puts the synonyms of each entity into the entitySyn dict
+        synonymsD[self.name] = self.synonyms  # this puts the synonyms of each entity into the synonymsD dict
 
     def look(self):
         print(self.lookT)
+
+        #specials
         if self.name == "receptionist" and findClassRoom.done is False:  # receptionist will ask if you need help
             receptionist.hello()
-        if self.name == "display" and findClassRoom.done is False:
+        elif self.name == "display" and findClassRoom.done is False:
             findClassRoom.complete()
 
+
     def use(self):
-        if player.currentRoom in self.useRoom or "ANY" in self.useRoom:
+        if player.currentRoom.name in self.useRoom or "ANY" in self.useRoom:
             print(self.useT) if self.useT != "" else None
             if self.consumeOnUse is True:
                 player.inv.remove(self.name)
@@ -45,25 +48,44 @@ class Entity:
                     player.drinks = 0
                 else:
                     print("You don't need to use the toilet.")
+            elif self.name == "key":
+                if breakroomOpened.done is False:
+                    print("The key fits the lock.")
+                    breakroomOpened.complete()
+                    from rooms import room105
+                    room105.locked = False
+                else:
+                    print("The door is already unlocked!")
         else:
             print("You can't use that here.")
 
 class Thing(Entity):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, onlyOne=True, *args, **kwargs):
+        self.onlyOne = onlyOne
         super().__init__(*args, **kwargs)
 
     def take(self):
-        player.currentRoom.takeD.pop(self.name)  # remove the item from room
-        player.inv.add(self.name)  # put item in inventory
-        if self.name == "pen":  #
+        if self.onlyOne is True:
+            player.currentRoom.takeD.pop(self.name)  # remove the item from room
+
+        if self.name == "pen":
             getPen.complete()
+
         elif self.name == "beer":
-            getBeer.complete()
+            if getBeer.done is False:
+                player.inv.add(self.name)  # put item in inventory
+                getBeer.complete()
+            elif getBeer.done is True:
+                baristaAnnoyed.complete()
+            return
+
         elif self.name == "coffee":
             player.inv.remove("bottle")
             getCoffee.complete()
         else:
             print(f"You put the {self.name} in your backpack.")
+
+        player.inv.add(self.name)  # put item in inventory
 
 class Person(Entity):
     def __init__(self, helloT, askT, tooHeavy=True,*args, **kwargs):
@@ -76,12 +98,26 @@ class Person(Entity):
         print(self.helloT)
 
     def ask(self):
-        print(self.askT)
-        if self.name in ["receptionist","teacher","barista"] and bladderFull.done is True:
-            print(f"You ask the {self.name} where the toilets are."
-                  '"First floor, east."')
+        from rooms import bar
+        if bladderFull.done is True:
+            print(f"You ask the {self.name} where the toilets are.\n"
+                  f'"First floor, east."')
         elif self.name == "receptionist" and findClassRoom.done is False:
+            print(self.askT)
             findClassRoom.complete()
+            receptionist.askT = "You don't have any more questions for the receptionist."
+        elif self.name == "barista" and baristaAnnoyed.done is True:
+            baristaAnnoyed.complete()
+        elif self.name == "barista" and bar.takeD == {}:
+            print(f"You ask the barista if you can get anything else.")
+            baristaAnnoyed.complete()
+        elif self.name in ["receptionist","teacher"] and findBreakRoom.done is False and findBreakRoom.active is True:
+            print(f"You ask the {self.name} where the breakroom is. "
+                  '"Oh ofcourse! Room 105."')
+            findBreakRoom.complete()
+        else:
+            print(self.askT)
+
 
 
 class Protagonist:
@@ -127,7 +163,8 @@ player = Protagonist()
 
 class Objective:
     def __init__(self, completeT, score, completeRoom,done=False,
-                 repeatable=False, repeatT="", repeatScore=0, confirmT=""):
+                 repeatable=False, repeatT="", repeatScore=0, confirmT="",
+                 active=True):
         self.completeT = completeT
         self.score = score
         self.completeRoom = completeRoom
@@ -136,6 +173,7 @@ class Objective:
         self.repeatT = repeatT
         self.repeatScore = repeatScore
         self.confirmT = confirmT
+        self.active = active
 
     def complete(self, xtraTxt=""):
         if player.currentRoom.name in self.completeRoom or "ANY" in self.completeRoom:
@@ -152,6 +190,7 @@ class Objective:
             elif self.done is True and self.repeatable is False:  # player completes a non-repeatable objective
                 printT=self.confirmT.replace("xtraTxt",str(xtraTxt))
                 print(printT)
+
         else:
             print("This is not the right place to use this item...")
 
@@ -171,6 +210,13 @@ findClassRoom = Objective(
     completeRoom=["ANY"]
 )
 
+findBreakRoom = Objective(
+    completeT="> You found the breakroom!",
+    score=1,
+    completeRoom=["ANY"],
+    active=False  # only activates during break
+)
+
 hurtEgo = Objective(
     completeT="> Your ego is hurt. Should have known better.",
     score=-1,
@@ -180,10 +226,17 @@ hurtEgo = Objective(
 )
 
 getPen = Objective(
-    completeT='"You can keep that if you want.", says the receptionist.\n'
+    completeT='"You can keep that if you want", says the receptionist.\n'
               '> You have a pen!',
     score=1,
     completeRoom=["ANY"]
+)
+
+breakroomOpened = Objective(
+    completeT="> You've unlocked the breakroom!",
+    score=2,
+    completeRoom=["hallway105"],
+    repeatable=False
 )
 
 getBeer = Objective(
@@ -268,6 +321,18 @@ bladderRelief = Objective(
     repeatT="You have another quick tinkle. Better safe than sorry!"
 )
 
+baristaAnnoyed = Objective(
+    completeT=f"\"Look, I'm closing up here. Don't you have a class to attend to?\"\n"
+                  "> The barkeep wants to close shop.",
+    score=0,
+    repeatable=True,
+    repeatT="The barista slaps his cleaning rag on the counter. \n"
+            "\"Please leave. Now.\"\n"
+            "> You are intimidated.",
+    repeatScore=-1,
+    completeRoom=["bar"]
+)
+
 receptionist = Person(
     name="receptionist",
     lookT="The receptionist is working on her computer. She is very focused.",
@@ -282,12 +347,18 @@ barista = Person(
     lookT="The barkeep is washing up. He does not look up at you.",
     helloT='The barkeep shakes off his hands. "Sup?"',
     synonyms=["barkeep","bartender","barkeeper","server","barman","staff"],
-    askT='You ask what you can [get] here. "Beer, coffee?", the barkeep seems somewhat impatient.'
+    askT='You ask what you can [get] here. "Beer, coffee?\n"'
+         '> The barkeep seems somewhat impatient...'
 )
+
+key = Thing(name="key",
+            lookT="An unremarkable key with a large keychain.",
+            synonyms=[],
+            useRoom="hallway105")
 
 pen = Thing(name="pen",
             lookT="The Syntra-branded pen you got from the reception desk.",
-            synonyms = [],
+            synonyms=[],
             consumeOnUse=False)
 
 laptop = Thing(name="laptop",
@@ -323,21 +394,13 @@ coffee = Thing(name="coffee",
 beer = Thing(name="beer",
              lookT="A specialty beer. Is this the right time to open it?",
              useT="You drink the beer.",
+             onlyOne=False,
              synonyms=[],
              consumeOnUse=True)
-
-bar = Entity(name="bar",
-             tooHeavy=True,
-             lookT="You pick up a faint whiff of freshly ground coffee. The bar to your west is opened.",
-             synonyms=["café", "cafe", "pub"])
-
-exit = Entity(name="exit",
-              lookT="The entrance to the building. You came in this way.",
-              synonyms=[])
 
 toilet = Entity(name="toilet",
                tooHeavy=True,
                lookT="Sparkling clean! Very inviting.",
-               synonyms=["toilets","lavatory","wc"],
+               synonyms=["lavatory","wc"],
                useT=""
                )
