@@ -139,8 +139,8 @@ class lockedRoom(Room):
             findBreakRoom.complete()
 
 class wrongRoom(Room):
-    def __init__(self, coor, name, synonyms, subject, useL=["pen","laptop"], askL=["teacher"],
-                 takeD={}, shortT="You are in a classroom.", longT="", lookL=["list","whiteboard"], exitsL=[],
+    def __init__(self, coor, name, synonyms, subject, useL=["pen","laptop"], askL=["teacher","student"],
+                 takeD={}, shortT="You are in a classroom.", longT="", lookL=["list","student"], exitsL=[],
                  locked=False,
                  lookAtT=""):
         self.coor = coor
@@ -471,7 +471,8 @@ room101=wrongRoom(  # project management
     subject={"    ...best practises when designing Gantt charts!":3},
     lookAtT="There's a teacher with a friendly expression on her face writing something on the whiteboard.\n"
             '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
-    longT="There's a teacher with a friendly expression on her face writing something on the whiteboard.", #todo: make different for every wrongroom
+    longT="There's a teacher with a friendly expression on her face writing something on the whiteboard.\n"
+          "A student is eagerly paying attention.", #todo: make different for every wrongroom
 )
 
 room201=wrongRoom(  # body language
@@ -481,7 +482,8 @@ room201=wrongRoom(  # body language
     subject={"    ...how to show confidence in a stressful situation!":3},
     lookAtT="There's a teacher with a confident expression on her face writing something on the whiteboard.\n"
             '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
-    longT="There's a teacher with a confident expression on her face writing something on the whiteboard.", #todo: make different for every wrongroom
+    longT="There's a teacher with a confident expression on her face writing something on the whiteboard.\n"
+          "A student is eagerly paying attention.", #todo: make different for every wrongroom
 )
 
 room203=wrongRoom(  # social media consultant
@@ -491,7 +493,8 @@ room203=wrongRoom(  # social media consultant
     subject={"    ...how to set quantitative targets for your SME's social media campaign!":3},
     lookAtT="There's a teacher with a determined expression on her face writing something on the whiteboard.\n"
             '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
-    longT="There's a teacher with a determined expression on her face writing something on the whiteboard.", #todo: make different for every wrongroom
+    longT="There's a teacher with a determined expression on her face writing something on the whiteboard.\n"
+          "A student is eagerly paying attention.", #todo: make different for every wrongroom
 )
 
 room303=wrongRoom(  # vitality coach
@@ -501,7 +504,8 @@ room303=wrongRoom(  # vitality coach
     subject={"    ...how to find the work-life balance that works for you!":3},
     lookAtT="There's a teacher with an energetic expression on her face writing something on the whiteboard.\n"
             '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
-    longT="There's a teacher with an energetic expression on her face writing something on the whiteboard.", #todo: make different for every wrongroom
+    longT="There's a teacher with an energetic expression on her face writing something on the whiteboard.\n"
+          "A student is eagerly paying attention.", #todo: make different for every wrongroom
 )
 
 room305=wrongRoom(  # dog massage for beginners
@@ -511,7 +515,8 @@ room305=wrongRoom(  # dog massage for beginners
     subject={"    ...how to reduce your pet's stress levels during a thunderstorm!":3},
     lookAtT="There's a teacher with a crazed expression on her face writing something on the whiteboard.\n"
             '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
-    longT="There's a teacher with a crazed expression on her face writing something on the whiteboard.", #todo: make different for every wrongroom
+    longT="There's a teacher with a crazed expression on her face writing something on the whiteboard.\n"
+          "A student is eagerly paying attention.", #todo: make different for every wrongroom
 )
 
 exit = Room(

@@ -155,7 +155,10 @@ class GameC:
 
             x=datetime.timedelta(minutes=int(inp.split()[1]))
 
-            if x >= datetime.timedelta(minutes=30):
+            if x < datetime.timedelta(seconds=0):
+                timetravel.complete()
+                return True
+            elif x >= datetime.timedelta(minutes=30):
                 y = input("> Are you sure you want to wait that long?\n"
                           "> Type [y] to confirm, or press enter to cancel. ___")
                 if y != "y":

@@ -24,7 +24,8 @@ class Entity:
             receptionist.hello()
         elif self.name == "display" and findClassRoom.done is False:
             findClassRoom.complete()
-
+        elif self.name == "student" and player.currentRoom != "room105":  # student is in class, paying attention
+            print("They feverishly pen something down. Boy they are motivated!")
 
     def use(self):
         if player.currentRoom.name in self.useRoom or "ANY" in self.useRoom:
@@ -134,10 +135,14 @@ class Person(Entity):
             print(f"You ask the {self.name} where the breakroom is. "
                   '"Oh ofcourse! Room 105."')
             findBreakRoom.complete()
-        elif self.name == "student":
+        elif self.name == "student" and player.currentRoom.name=="room105":
             print(self.askT)
             studentChat.complete()
             player.thingsLearned["    ...a few useful Python hotkeys!"] = 2
+        elif self.name == "student":
+            print("The student is totally focused on the lesson at hand.\n"
+                  "Now is not a good time to ask them a question."
+                  )
         else:
             print(self.askT)
 
@@ -355,6 +360,15 @@ manyStairsClimbed = Objective(
     repeatScore=-1
 )
 
+timetravel = Objective(
+    completeT="Trying to travel back in time, eh? It won't work, but I commend your creativity...\n"
+              "> You were complemented by the game dev!",
+    score=4,
+    completeRoom=["ANY"],
+    repeatable=False,
+    confirmT="Don't you feel like this is breaking immersion?"
+)
+
 bladderFull = Objective(
     completeT="> All these drinks have filled up your bladder...",
     score=0,
@@ -495,8 +509,8 @@ toilet = Entity(name="toilet",
                 )
 
 student = Person(name="student",
-                 helloT='"Hi. Word of warning about the tea: it\'s cold."',
-                 lookT="The student takes a sip from their cup of tea. It's clear they are not enjoying it.",
+                 helloT='"Hi. Word of warning about the tea here: it\'s always cold."',
+                 lookT="The student takes a small sip from their cup of tea.",
                  synonyms=[],
                  askT="You ask the other student about their experience with Python.",
                  askTime="long")
