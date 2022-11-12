@@ -1,5 +1,8 @@
 synonymsD = {}  # dict with synonyms for all entities, is populated by entity init
 
+wrongRoomL = ["room101","room201","room203","room303","room305"]
+allRoomL = ["room101","room201","room203","room303","room305","room102"]
+
 class Entity:
     def __init__(self, name, lookT, synonyms,
                  useTime="short",askTime="short",
@@ -21,15 +24,20 @@ class Entity:
 
         #specials
         if self.name == "receptionist" and findClassRoom.done is False:  # receptionist will ask if you need help
-            receptionist.hello()
+            print("With a start, the receptionist looks up at you. 'Oh, good evening. Anything you wanted to [ask]?'")
         elif self.name == "display" and findClassRoom.done is False:
             findClassRoom.complete()
         elif self.name == "student" and player.currentRoom != "room105":  # student is in class, paying attention
             print("They feverishly pen something down. Boy they are motivated!")
+        elif self.name == "register" and type(player.currentRoom).__name__ == "wrongRoom":
+            print("Your name isn't on the list.")
+        elif self.name == "register" and player.currentRoom.name == "room102":
+            print("You should sign the register next to your name.")
 
     def use(self):
         if player.currentRoom.name in self.useRoom or "ANY" in self.useRoom:
             print(self.useT) if self.useT != "" else None
+
             if self.consumeOnUse is True:
                 player.inv.remove(self.name)
                 print(f"> You no longer have the {self.name}.")
@@ -66,13 +74,26 @@ class Entity:
                     print("You don't need to use the toilet.")
             elif self.name == "key":
                 if breakroomOpened.done is False:
-                    print("The key fits the lock.")
+                    print("The key fits the lock. The student thanks you and walks into the room.")
                     breakroomOpened.complete()
                     from rooms import room105
                     room105.locked = False
                 else:
                     print("The door is already unlocked!")
+            elif self.name =="pen" and player.currentRoom.name=="room102":
+                if registerSigned.done is False:
+                    registerSigned.complete()
+                else:
+                    expressedCreativity.complete()
+            elif self.name == "pen" and player.currentRoom.name in ["room101","room203","room201","room303","room305"]:
+                if wrongRegisterSigned.done is False:
+                    wrongRegisterSigned.complete()
+                else:
+                    expressedCreativity.complete()
             return True
+
+
+
         else:
             print("You can't use that here.")
             return False
@@ -84,6 +105,10 @@ class Thing(Entity):
 
     def take(self):
         if self.onlyOne is True:
+            if self.name == "register":
+                print("You don't need that. The teacher needs that!")
+                return True
+
             player.currentRoom.takeD.pop(self.name)  # remove the item from room
 
         if self.name == "pen":
@@ -117,35 +142,62 @@ class Person(Entity):
         print(f"You greet the {self.name}.")
         print(self.helloT)
 
-    def ask(self):
+    def ask(self):  # returns true if succesfull ask
         from rooms import bar
+
+        if self.name == "student":
+            student.askTime = "short"
+
         if player.drinks > 3:
             print(f"You ask the {self.name} where the toilets are.\n"
                   f'"First floor, east from the stairs." You thank them for this critical information.')
+            return True
         elif self.name == "receptionist" and findClassRoom.done is False:
             print(self.askT)
             findClassRoom.complete()
-            receptionist.askT = "You don't have any more questions for the receptionist."
+            return True
         elif self.name == "barista" and baristaAnnoyed.done is True:
             baristaAnnoyed.complete()
+            return True
         elif self.name == "barista" and bar.takeD == {}:
             print(f"You ask the barista if you can get anything else.")
             baristaAnnoyed.complete()
-        elif self.name in ["receptionist","teacher"] and findBreakRoom.done is False and findBreakRoom.active is True:
+            return True
+
+        elif self.name in ["receptionist"] and findBreakRoom.done is False and findBreakRoom.active is True:
             print(f"You ask the {self.name} where the breakroom is. "
                   '"Oh ofcourse! Room 105."')
             findBreakRoom.complete()
+            return True
         elif self.name == "student" and player.currentRoom.name=="room105":
             print(self.askT)
             studentChat.complete()
+            student.askTime="long"
             player.thingsLearned["    ...a few useful Python hotkeys!"] = 2
-        elif self.name == "student":
-            print("The student is totally focused on the lesson at hand.\n"
+            return True
+        elif self.name in ["student"] \
+                and "pen" not in player.inv \
+                and player.currentRoom.name in ["room101","room203","room201","room303","room305"] \
+                and wrongRegisterSigned.done is False\
+                and penBorrowed.done is False:
+            print(f'You ask the {self.name} if you can borrow their pen.\n'
+                  f'"Sure, catch!" They flick their pen towards you.')
+            penBorrowed.complete()
+            player.inv.add("pen")
+            return True
+        elif self.name == "student" and player.currentRoom in wrongRoomL:
+            print("The student is in deep concentration.\n"
                   "Now is not a good time to ask them a question."
                   )
+            return False
+        elif self.name == "student" and player.currentRoom == "102":
+            print(
+                  )
+            illPrepared.complete()
+            return False
         else:
             print(self.askT)
-
+            return True
 
 
 class Protagonist:
@@ -232,6 +284,27 @@ getPoints = Objective(
     repeatScore=-1
 )
 
+inClassroomOnTime = Objective(
+    completeT="You got to class on time!",
+    score=1,
+    completeRoom=allRoomL,
+    repeatable=True,
+    repeatT="Once more, you are in your seat when class starts.",
+    repeatScore=1
+)
+
+notInClassroomOnTime = Objective(
+    completeT='"Why hello there..." The teacher stops in the middle of their explanation.\n'
+              '"Quickly grab yourself a seat, will you?"'
+              "> You didn't get to class on time...",
+    score=-2,
+    completeRoom=["ANY"],
+    repeatable=True,
+    repeatT="Once more, the class has already started when you stroll into the room.\n"
+            "The student tuts you.",
+    repeatScore=-3
+)
+
 findClassRoom = Objective(
     completeT="> You found which classroom you should go to!",
     score=1,
@@ -245,6 +318,34 @@ findBreakRoom = Objective(
     active=False  # only activates during break
 )
 
+poignantQuestion = Objective(
+    completeT="You ask the teacher a poignant question about the lesson you've just received.\n"
+              "> You've asked an astute question!",
+    score=2,
+    completeRoom=allRoomL,
+)
+
+illPrepared = Objective(
+    completeT="You still have to [use laptop] install PyCharm! Try to get it done before class starts!",
+    score=0,
+    completeRoom=["room102"]
+)
+
+installPyCharm = Objective(
+    completeT="You manage to install PyCharm before class starts! Crisis averted!\n"
+                "It took you a few minutes, mainly to connect to the Syntra wifi.",
+    score=2,
+    completeRoom = ["room102"]
+)
+
+installPyCharmTooLate = Objective(
+    completeT="You manage to install PyCharm during the first minutes of class.\n"
+                "It took you a few minutes, mainly to connect to the Syntra wifi.",
+    score=1,
+    completeRoom = ["room102"]
+)
+
+
 hurtEgo = Objective(
     completeT="> Your ego is hurt. Should have known better.",
     score=-1,
@@ -256,6 +357,65 @@ hurtEgo = Objective(
 getPen = Objective(
     completeT='"You can keep that if you want", says the receptionist.\n'
               '> You have a pen!',
+    score=1,
+    completeRoom=["ANY"]
+)
+
+penBorrowed = Objective(
+    completeT='> You have borrowed a pen!',
+    score=0,
+    completeRoom=["ANY"],
+    repeatable=True,
+    confirmT="Yet again, you had to rely on others to compensate for your own incompetence.",
+    repeatScore=-1
+)
+
+registerSigned = Objective(
+    completeT='> You add your signature next to your name on the register.',
+    score=1,
+    completeRoom=["room102"],
+    repeatable=False,
+    confirmT=""
+)
+
+expressedCreativity = Objective(
+    completeT='This time you add a little doodle on the register.\n'
+            '> You expressed your creativity!',
+    score=2,
+    completeRoom=["room101","room201","room203","room303","room305","room102"],
+    repeatable=True,
+    repeatScore=0,
+    repeatT="You add yet another doodle to the register. It isn't as good as the first doodle."
+)
+
+wrongRegisterSigned = Objective(
+    completeT='You scribble your name on the end of the list.',
+    score=1,
+    completeRoom=["room101","room201","room203","room303","room305"],
+    repeatable=True,
+    confirmT="> You scribble your name on the end of the list.",
+    repeatScore=0
+)
+
+penReturned = Objective(
+    completeT='You give the pen back to the student. "Cheers."\n'
+              '> You are an honourable person.',
+    score=1,
+    completeRoom=["ANY"],
+    repeatable=False
+)
+
+penStolen = Objective(
+    completeT="You tell the student you don't remember borrowing a pen.\n"
+              '"Whatever man, just keep it then."\n'
+              '> You brazenly stolen a pen. Badass.',
+    score=1,
+    completeRoom=["ANY"],
+    repeatable=False
+)
+
+madeIt = Objective(
+    completeT="You made it to 22:00! You feel like you've deserved a participation award.",
     score=1,
     completeRoom=["ANY"]
 )
@@ -412,9 +572,80 @@ baristaAnnoyed = Objective(
     completeRoom=["bar"]
 )
 
-#learn203 = Objective(
+learnPM1 = Objective(
+    completeT=f"You learned something about project management!",
+    score=3,
+    repeatable=False,
+    completeRoom="room101"
+)
+learnPython1 = Objective(
+    completeT=f"You learned data type (im)mutability!",
+    score=3,
+    repeatable=False,
+    completeRoom="room102"
+)
+learnSMC1 = Objective(
+    completeT=f"You learned something about social media marketing!",
+    score=3,
+    repeatable=False,
+    completeRoom="room203"
+)
+learnBodyLang1 = Objective(
+    completeT=f"You learned something about body language!",
+    score=3,
+    repeatable=False,
+    completeRoom="room201"
+)
+learnBodyVitaCoach1 = Objective(
+    completeT=f"You learned something about managing your energy levels!",
+    score=3,
+    repeatable=False,
+    completeRoom="room303"
+)
+learnDogMassa1 = Objective(
+    completeT=f"You learned something about massaging dogs!",
+    score=3,
+    repeatable=False,
+    completeRoom="room305"
+)
 
-#)
+learnPM2 = Objective(
+    completeT=f"You learned something about project management!",
+    score=3,
+    repeatable=False,
+    completeRoom="room101"
+)
+learnPython2 = Objective(
+    completeT=f"You learned something about list comprehension!",
+    score=3,
+    repeatable=False,
+    completeRoom="room102"
+)
+learnSMC2 = Objective(
+    completeT=f"You learned something about social media marketing!",
+    score=3,
+    repeatable=False,
+    completeRoom="room203"
+)
+learnBodyLang2 = Objective(
+    completeT=f"You learned something about body language!",
+    score=3,
+    repeatable=False,
+    completeRoom="room201"
+)
+learnBodyVitaCoach2 = Objective(
+    completeT=f"You learned something about managing your energy levels!",
+    score=3,
+    repeatable=False,
+    completeRoom="room303"
+)
+learnDogMassa2 = Objective(
+    completeT=f"You learned something about massaging dogs!",
+    score=3,
+    repeatable=False,
+    completeRoom="room305"
+)
+
 
 receptionist = Person(
     name="receptionist",
@@ -440,7 +671,7 @@ key = Thing(name="key",
             useRoom="hallway105")
 
 pen = Thing(name="pen",
-            lookT="The Syntra-branded pen you got from the reception desk.",
+            lookT="A Syntra-branded pen.",
             synonyms=["room102","room101","room203","room201","room303","room305"],
             consumeOnUse=False)
 
@@ -448,6 +679,8 @@ laptop = Thing(name="laptop",
                lookT="You look at your tiny laptop. It can barely run PyCharm.",
                synonyms = ["computer"],
                useRoom= ["room102"],
+               useT="",
+               useTime="long",
                consumeOnUse=False)
 
 bottle = Thing(name="bottle",
@@ -455,6 +688,13 @@ bottle = Thing(name="bottle",
                synonyms=["thermos"],
                useT="No matter how hard you slurp, you can't seem to get the last few drops of cold coffee out.",
                consumeOnUse=False)
+
+register=Thing(name="register",
+            lookT="It's a register of all participants to the course.",
+            synonyms=["paper","registry","sheet"],
+            useT="You need a pen to sign the paper.",
+            consumeOnUse=False
+            )
 
 display = Thing(name="display",
                 lookT="The display lists all classes that are given this evening.\n"
@@ -512,11 +752,15 @@ student = Person(name="student",
                  helloT='"Hi. Word of warning about the tea here: it\'s always cold."',
                  lookT="The student takes a small sip from their cup of tea.",
                  synonyms=[],
-                 askT="You ask the other student about their experience with Python.",
-                 askTime="long")
+                 askT="You ask the student if you were supposed to install anything for the Python class.\n"
+                      '"Why, PyCharm ofcourse! Didn\'t you read the email that was sent out yesterday?"\n'
+                      '> You can [use] your laptop to install PyCharm.',
+                 askTime="short"
+)
 
 teacher = Person(name="teacher",
-                 helloT="Welcome!",
+                 helloT='"Welcome, welcome!"',
                  lookT="The teacher looks up at you.",
                  synonyms=[],
-                 askT="You ask a poignant question about Python.")
+                 askT='You ask the teacher if you need any previous experience.\n'
+                      'They comfort you. "Don\'t worry, we\'ll start right with the basics."')

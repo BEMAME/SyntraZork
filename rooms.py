@@ -17,7 +17,8 @@ def roomFromCoor(coor):
     return currentRoom
 
 class Room:
-    def __init__(self,name,coor,shortT,longT,lookL,exitsL,synonyms,lookAtT="",locked=False,useL=[],askL=[],takeD={}):
+    def __init__(self,name,coor,shortT,longT,lookL,exitsL,synonyms,
+                 subject1={},subject2={},lookAtT="",locked=False,useL=[],askL=[],takeD={}):
         self.name = name
         self.coor = coor
         self.shortT = shortT
@@ -27,6 +28,8 @@ class Room:
         self.locked = locked
         self.useL = useL
         self.askL = askL
+        self.subject1 = subject1
+        self.subject2 = subject2
         self.takeD = takeD
         self.exitsL = exitsL
         self.synonyms = synonyms
@@ -139,8 +142,10 @@ class lockedRoom(Room):
             findBreakRoom.complete()
 
 class wrongRoom(Room):
-    def __init__(self, coor, name, synonyms, subject, useL=["pen","laptop"], askL=["teacher","student"],
-                 takeD={}, shortT="You are in a classroom.", longT="", lookL=["list","student"], exitsL=[],
+    def __init__(self, coor, name, synonyms, subject1, subject2, useL=["register"], askL=["teacher","student"],
+                 takeD={"register":"There's a sheet of paper laying on the table near the door."},
+                 shortT="", longT="", lookL=["register","student","register"],
+                 exitsL=[],
                  locked=False,
                  lookAtT=""):
         self.coor = coor
@@ -148,7 +153,8 @@ class wrongRoom(Room):
         self.shortT = shortT
         self.longT = longT
         self.lookL = lookL
-        self.subject = subject
+        self.subject1 = subject1
+        self.subject2 = subject2
         self.exitsL = exitsL
         self.useL = useL
         self.locked = locked
@@ -159,6 +165,7 @@ class wrongRoom(Room):
         self.synonyms.append(self.name)
         roomCoorD[self.coor] = self.name
         synonymsD[self.name] = self.synonyms
+        self.shortT = f"You are in classroom {self.name[-3:]}."
         self.exitsL = ["s"] if self.name.endswith(("1","2","3")) else ["w"]
 
     def lookAt(self):
@@ -408,7 +415,8 @@ room105 = lockedRoom(
     coor=(1,-1,1),
     shortT= "You are in the breakroom.",
     longT= "There's a large aluminium dispenser on the table, as well as several cups.\n"
-           "The other student is looking at the dispenser as if they hold a grudge against it.",
+           "The other student is looking at the dispenser as if they hold a grudge against it.\n"
+           "The exit is to your east.",
     lookL= ["dispenser","student"],
     askL=["student"],
     useL=["dispenser"],
@@ -464,59 +472,94 @@ room306 = lockedRoom(
     synonyms=["306"]
 )
 
+room102=Room(
+    name="room102",
+    coor=(-2,2,1),
+    synonyms=["102"],
+    shortT="You are in classroom 102.",
+    askL=["teacher","student"],
+    lookL=["teacher","student","key","register"],
+    exitsL=["s"],
+    subject1={"    ...data type mutability!": 3},
+    subject2={"    ...when to use list comprehensions!": 3},
+    lookAtT="There's a nerd with a friendly expression writing something on the whiteboard.\n"
+            '"Come in, come in!" She beacons you over.',
+    longT=f"The exit is to your south.\n"
+          "There's a teacher getting ready for class.\n"
+          "A student is franticly working on their laptop.\n"
+          "> You can [wait] to wait until the lessons start, if you want.",
+    takeD={"key":"A key with a comically large keychain is laying on the teacher's desk.",
+           "register":"There's a sheet of paper laying on the table near the door."}
+)
+
 room101=wrongRoom(  # project management
     name="room101",
     coor=(-1,2,1),
     synonyms=["101"],
-    subject={"    ...best practises when designing Gantt charts!":3},
+    subject1={"    ...how to define milestones and iterations!":3},
+    subject2={"    ...best practises when designing Gantt charts!":3},
     lookAtT="There's a teacher with a friendly expression on her face writing something on the whiteboard.\n"
             '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
-    longT="There's a teacher with a friendly expression on her face writing something on the whiteboard.\n"
-          "A student is eagerly paying attention.", #todo: make different for every wrongroom
+    longT=f"The exit is to your south.\n"
+            "There's a teacher getting ready for class.\n"
+            "A student is franticly working on their laptop.\n"
+            "> You can [wait] to wait until the lessons start, if you want.", #todo: make different for every wrongroom
 )
 
 room201=wrongRoom(  # body language
     name="room201",
     coor=(-1,2,2),
     synonyms=["201"],
-    subject={"    ...how to show confidence in a stressful situation!":3},
+    subject1={"    ...how to show confidence in a stressful situation!":3},
+    subject2={"    ...the imporance of maintaining eye contact!":3},
     lookAtT="There's a teacher with a confident expression on her face writing something on the whiteboard.\n"
             '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
-    longT="There's a teacher with a confident expression on her face writing something on the whiteboard.\n"
-          "A student is eagerly paying attention.", #todo: make different for every wrongroom
+    longT=f"The exit is to your south.\n"
+            "There's a teacher getting ready for class.\n"
+            "A student is franticly working on their laptop.\n"
+            "> You can [wait] to wait until the lessons start, if you want.", #todo: make different for every wrongroom
 )
 
 room203=wrongRoom(  # social media consultant
     name="room203",
     coor=(-3,2,2),
     synonyms=["203"],
-    subject={"    ...how to set quantitative targets for your SME's social media campaign!":3},
+    subject1={"    ...how to set quantitative targets for your SME's social media campaign!":3},
+    subject2={"    ...how to tailor your advertising campaign to small children!":3},
     lookAtT="There's a teacher with a determined expression on her face writing something on the whiteboard.\n"
             '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
-    longT="There's a teacher with a determined expression on her face writing something on the whiteboard.\n"
-          "A student is eagerly paying attention.", #todo: make different for every wrongroom
+    longT=f"The exit is to your south.\n"
+            "There's a teacher getting ready for class.\n"
+            "A student is franticly working on their laptop.\n"
+            "> You can [wait] to wait until the lessons start, if you want.", #todo: make different for every wrongroom
 )
 
 room303=wrongRoom(  # vitality coach
     name="room303",
     coor=(-3,2,3),
     synonyms=["303"],
-    subject={"    ...how to find the work-life balance that works for you!":3},
+    subject1={"    ...how to find the work-life balance that works for you!":3},
+    subject2={"    ...three easy mindfullness exercises for on the loo!": 3},
     lookAtT="There's a teacher with an energetic expression on her face writing something on the whiteboard.\n"
             '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
-    longT="There's a teacher with an energetic expression on her face writing something on the whiteboard.\n"
-          "A student is eagerly paying attention.", #todo: make different for every wrongroom
+    longT=f"The exit is to your south.\n"
+            "There's a teacher getting ready for class.\n"
+            "A student is franticly working on their laptop.\n"
+            "> You can [wait] to wait until the lessons start, if you want.", #todo: make different for every wrongroom
 )
 
 room305=wrongRoom(  # dog massage for beginners
     name="room305",
     coor=(1,-1,3),
     synonyms=["305"],
-    subject={"    ...how to reduce your pet's stress levels during a thunderstorm!":3},
+    subject1={"    ...how to promote your pet's overall wellbeing!":3},
+    subject2={"    ...how to reduce your pet's stress levels during a thunderstorm!":3},
     lookAtT="There's a teacher with a crazed expression on her face writing something on the whiteboard.\n"
             '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
-    longT="There's a teacher with a crazed expression on her face writing something on the whiteboard.\n"
-          "A student is eagerly paying attention.", #todo: make different for every wrongroom
+    longT=f"The exit is to your west.\n"
+            "There's a teacher getting ready for class.\n"
+            "A student is franticly working on their laptop.\n"
+            "> You can [wait] to wait until the lessons start, if you want.", #todo: make different for every wrongroom
 )
 
 exit = Room(

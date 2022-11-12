@@ -9,14 +9,14 @@ import time
 
 
 class GameC:
-    def __init__(self, timeNow, laterThan2230,laterThan2200,laterThan2130,laterThan2100,laterThan2030,laterThan2000,
-                 timeVerbose=False, coor=[0,0,0], gameStart=True):
+    def __init__(self, timeNow, laterThan2230,laterThan2200,laterThan1900,laterThan2035,laterThan2020,
+                 recess=True,timeVerbose=False, coor=[0,0,0], gameStart=True):
         self.laterThan2230 = laterThan2230
         self.laterThan2200 = laterThan2200
-        self.laterThan2130 = laterThan2130
-        self.laterThan2100 = laterThan2100
-        self.laterThan2030 = laterThan2030
-        self.laterThan2000 = laterThan2000
+        self.laterThan2035 = laterThan2035
+        self.laterThan2020 = laterThan2020
+        self.laterThan1900 = laterThan1900
+        self.recess = recess
         self.coor = coor
         self.timeNow = timeNow
         self.timeVerbose = timeVerbose
@@ -72,6 +72,7 @@ class GameC:
               "[d] to go Down\n"
               "[look] to look around the room\n"
               "[talk <person>] to start a conversation\n"
+              "[hello <person>] to greet someone\n"
               "[look <object>] to look at an object\n"
               "[use <object>] to use and object\n"
               "[take <object>] to pick up an object\n"
@@ -158,14 +159,18 @@ class GameC:
             if x < datetime.timedelta(seconds=0):
                 timetravel.complete()
                 return True
-            elif x >= datetime.timedelta(minutes=30):
-                y = input("> Are you sure you want to wait that long?\n"
-                          "> Type [y] to confirm, or press enter to cancel. ___")
+            elif x > datetime.timedelta(minutes=10):
+                print("You can only wait up to 10 min at a time. Wouldn't want you to get bored!")
+                return True
+            else:
+                y = input(f"> Are you sure you want to wait {round(x.seconds/60)} minutes?\n"
+                      "> Type [y] to confirm, or press enter to cancel. ___"
+                      )
                 if y != "y":
+                    print("------------------------------------------------------------------------------------------------------")
                     return True
-            print(f"> You patiently wait {int(inp.split()[1])} minutes.")
-            game.passTime(x.seconds+1)
-            game.displayTime()
+                print(f"> You patiently wait {int(inp.split()[1])} minutes.")
+                game.passTime(x.seconds+1)
 
             return True
 
@@ -245,9 +250,14 @@ class GameC:
 
         elif len(inp.split()) == 2:
             x = self.synonymCheck(inp.split()[1].lower())
+
+            if x == "teacher" and poignantQuestion.done is False and game.recess is True and game.laterThan1900 is True:
+                poignantQuestion.complete()
+                return True
+
             if x in player.currentRoom.askL:
-                str_to_class(x).ask()
-                game.passTime(str_to_class(x).askTime)
+                if str_to_class(x).ask() is True:
+                    game.passTime(str_to_class(x).askTime)
             elif x in player.inv:
                 print(f"{x.capitalize()} isn't feeling very talkative.")
             else:
@@ -321,7 +331,14 @@ class GameC:
             x = self.synonymCheck(inp.split()[1].lower())
             n = 'an' if inp.split()[1].lower()[0] in ["a","e","i","o","u"] else 'a'  # "a pen" versus "an objective"
 
-            if x in player.inv or x in player.currentRoom.useL:
+            if x == "laptop" and player.currentRoom.name == "room102" and installPyCharm.done is False:
+                game.passTime("long")
+                if game.timeNow > datetime.datetime(2022, 9, 20, 19, 00, 00):
+                    installPyCharmTooLate.complete()
+                else:
+                    installPyCharm.complete()
+
+            elif x in player.inv or x in player.currentRoom.useL:
                 if str_to_class(x).use() is True:  # successfully used something
                     game.passTime(str_to_class(x).useTime)  # how long it takes depends on what you use, default = "short"
 
@@ -330,8 +347,46 @@ class GameC:
 
             else:
                 print(f"What's {n} {inp.split()[1].lower()}?")
-
             return True
+
+    def learnInp(self):
+        if inp.lower() != "learn":
+            return False
+
+        if player.currentRoom.name in allRoomL:
+            if game.recess is True:
+                print("There are no classes being taught right now.")
+            elif self.laterThan2035 is True:
+                if player.currentRoom.name == "room101":
+                    learnPM2.complete()
+                if player.currentRoom.name == "room102":
+                    learnPython2.complete()
+                if player.currentRoom.name == "room203":
+                    learnSMC2.complete()
+                if player.currentRoom.name == "room201":
+                    learnBodyLang2.complete()
+                if player.currentRoom.name == "room303":
+                    learnBodyVitaCoach2.complete()
+                if player.currentRoom.name == "room305":
+                    learnDogMassa2.complete()
+                player.thingsLearned.update(player.currentRoom.subject2)
+                game.timeNow = datetime.datetime(2022, 9, 20, 22, 1, 3)
+            elif self.laterThan1900 is True:
+                if player.currentRoom.name == "room101":
+                    learnPM1.complete()
+                if player.currentRoom.name == "room102":
+                    learnPython1.complete()
+                if player.currentRoom.name == "room203":
+                    learnSMC1.complete()
+                if player.currentRoom.name == "room201":
+                    learnBodyLang1.complete()
+                if player.currentRoom.name == "room303":
+                    learnBodyVitaCoach1.complete()
+                if player.currentRoom.name == "room305":
+                    learnDogMassa1.complete()
+                player.thingsLearned.update(player.currentRoom.subject1)
+                game.timeNow = datetime.datetime(2022, 9, 20, 20, 20, 58)
+        return True
 
     def invalidAction(self):
         print("I don't understand what you want to do. Type [help] for a list of basic commands.")
@@ -343,13 +398,26 @@ class GameC:
                   f"You swear never to return again.")
         elif -1 < player.score < 10:  # bad ending
             print(f"You sigh as walk towards your bicycle. Learning about Python was tougher than you thought.\n"
-                  "On the way home, you contemplate quitting the Python for beginners course.")
+                  "On the way home, you contemplate quitting your Syntra course.")
         elif player.score > 9:  # good ending
             print(f"Satisfied, you walk towards your bicycle.\n"
-                  "On the way home, many ideas for your Python project come to mind.\n"
-                  "You jot them down on a piece of paper before you go to bed.")
+                  "On the way home, many ideas for your future project come to mind.\n"
+                  "You jot them down on a piece of paper as soon as you get home.")
 
         input("\n(press Enter to continue)\n")
+
+        if wrongRegisterSigned.done is True:
+            print(f"You signed the wrong register!")
+            player.changeScore(-1)
+
+            input("\n(press Enter to continue)\n")
+
+        if penStolen.done is True:
+            print(f"You put the stolen pen on display on the mantlepiece.\n"
+                  f"What a chump that student was!")
+            player.changeScore(1)
+
+            input("\n(press Enter to continue)\n")
 
         if "beer" in player.inv:
             print(f"After a long day you're finally home!\n"
@@ -370,13 +438,14 @@ class GameC:
                 print(x)
                 time.sleep(1)
             time.sleep(1)
+            print("")
             player.changeScore(sum(player.thingsLearned.values()))
             input("\n(press Enter to continue)\n")
 
-        if "key" in player.inv:
-            print(f"A few days later you find the key with the massive keychain in your backpack. Whoops!")
-            player.changeScore(-1)
-            input("\n(press Enter to continue)\n")
+ #       if "key" in player.inv:
+  #          print(f"A few days later you find the key with the massive keychain in your backpack. Whoops!")
+   #         player.changeScore(-1)
+    #        input("\n(press Enter to continue)\n")
 
         print(f" ~~You finished the game with a score of {player.score}! Thanks for playing!")
 
@@ -384,13 +453,12 @@ class GameC:
         input("\nPress any button to quit.\n")
         sys.exit()
 
-game = GameC(timeNow=datetime.datetime(2022, 9, 20, 19, 52, 11),
+game = GameC(timeNow=datetime.datetime(2022, 9, 20, 18, 52, 11),
              laterThan2230 = False,
              laterThan2200 = False,
-             laterThan2130 = False,
-             laterThan2100 = False,
-             laterThan2030 = False,
-             laterThan2000 = False)
+             laterThan2035 = False,
+             laterThan2020 = False,
+             laterThan1900 = False)
 
 while True:
     # setting up the very first room at the start of the game...
@@ -424,6 +492,7 @@ while True:
     validAction.append(game.takeInp())
     validAction.append(game.useInp())
     validAction.append(game.optionsInp())
+    validAction.append(game.learnInp())
     if True not in validAction:
         game.invalidAction()
 
@@ -436,19 +505,107 @@ while True:
     elif game.timeNow > datetime.datetime(2022, 9, 20, 22, 00, 00) and game.laterThan2200 is False:
         game.laterThan2200 = True
         drinkCoffee.done = False
-    
-    elif game.timeNow > datetime.datetime(2022, 9, 20, 21, 30, 00) and game.laterThan2130 is False:
-        game.laterThan2130 = True
+
+        print("It's past 22:00. Classes have concluded. Time to warp up and go home...")
+        madeIt.complete()
+
+        if player.currentRoom.name in allRoomL:
+            print('The teacher wraps up. "See you all next week!"')
+
+
+        for x in allRoomL:
+            str_to_class(x).useL=[]
+            str_to_class(x).takeD={}
+            str_to_class(x).longT=f"The exit is to your south." \
+                                  f"\nClass has finished. The teacher is packing up."
+            str_to_class(x).lookAtT="The class has ended."
+            str_to_class(x).askL=["teacher"]
+            str_to_class(x).lookL=["teacher"]
+        teacher.askT="The teacher smiles at you.\n" \
+                     '"Enthousiastic about the course material, eh? Have a rest, we can answer your question next week."'
+        teacher.lookT="The teacher is packing up."
+
+        if penBorrowed.done is True:
+            time.sleep(1)
+            print("The student approaches you.\n"
+                  '"Hey, I think you still have my pen, am I right?"')
+            while x.lower not in ["y","yes","n","no"]:
+                x = input("> Do you answer [yes] or [no]? ___\n")
+                if x.lower() in ["y", "yes"]:
+                    player.inv.remove("pen")
+                    penReturned.complete()
+                    penBorrowed.done = False
+                else:
+                    penStolen.complete()
+                    penBorrowed.done = False
+
+    elif game.timeNow > datetime.datetime(2022, 9, 20, 20, 35, 00) and game.laterThan2035 is False:
+        game.laterThan2035 = True
+        drinkCoffee.done = False
+        game.recess = False
+
+        findBreakRoom.active=False
+
+        if player.currentRoom.name in allRoomL:
+            print('"Alright everyone, let\'s continue with the lesson at hand!" The teacher addresses the class.')
+
+        for x in allRoomL:
+            str_to_class(x).longT = f"The exit is to your south." \
+                                    f"\nA teacher is in the middle of an explanation." \
+                                    f"\nA student is eagerly paying attention." \
+                                    f"\n> Type [learn] to pay attention to class. Time will proceed rapidly."
+            str_to_class(x).lookAtT = "The class is in session.\n"
+            '"Ah, a latecomer! Come on in!" The teacher beacons you over.'
+        teacher.askT = "You have a question on your mind, but you don't want to interrupt\n" \
+                       " the teacher in the middle of their explanation..."
+        room105.lookAtT="The lights are on, but nobody's there.\n" \
+                        "You spot a large, insulated dispenser on one of the tables, alongside some cups."
+
+    elif game.timeNow > datetime.datetime(2022, 9, 20, 20, 20, 00) and game.laterThan2020 is False:
+        game.laterThan2020 = True
+        game.recess = True
         drinkCoffee.done = False
 
-    elif game.timeNow > datetime.datetime(2022, 9, 20, 21, 00, 00) and game.laterThan2100 is False:
-        game.laterThan2100 = True
-        drinkCoffee.done = False
-        
-    elif game.timeNow > datetime.datetime(2022, 9, 20, 20, 30, 00) and game.laterThan2030 is False:
-        game.laterThan2030 = True
-        drinkCoffee.done = False
+        #todo bar closed but beer still there
 
-    elif game.timeNow > datetime.datetime(2022, 9, 20, 20, 00, 00) and game.laterThan2000 is False:
-        game.laterThan2000 = True
+        if player.currentRoom.name in allRoomL:
+            print('The teacher concludes: "... but we\'ll let that sink in for now.'
+                  ' Let\'s have a break until 20:35, ok?')
 
+        print("It's break time! Classes are in recess until 20:35.\n"
+              "> You could consider a bathroom break or to visit the breakroom.")
+
+        for x in allRoomL:
+            str_to_class(x).useL=["register"]
+            str_to_class(x).takeD={}
+            str_to_class(x).longT=f"The exit is to your south." \
+                                  f"\nClass is in recess. Only the teacher is present - they are checking their emails."
+            str_to_class(x).lookAtT="The class is in recess. Only the teacher is present"
+            str_to_class(x).askL=["teacher"]
+            str_to_class(x).lookL=["teacher"]
+        teacher.askT='You ask the teacher where the breakroom is.\n' \
+                     '"Good question that. Best to ask the reception desk."'
+        findBreakRoom.active=True
+        teacher.lookT="The teacher is checking their emails."
+        receptionist.askT="You can't thing of anything to ask the receptionist."
+
+
+    elif game.timeNow > datetime.datetime(2022, 9, 20, 19, 00, 00) and game.laterThan1900 is False:
+        game.laterThan1900 = True
+        print("It's past 19:00. Classes have started.")
+        game.recess = False
+
+        if player.currentRoom.name in allRoomL:
+            inClassroomOnTime.complete()
+        else:
+            notInClassroomOnTime.complete()
+
+        for x in allRoomL:
+            str_to_class(x).longT=f"The exit is to your south." \
+                                  f"\nA teacher is in the middle of an explanation." \
+                                  f"\nA student is eagerly paying attention." \
+                                  f"\n> Type [learn] to pay attention to class. Time will proceed rapidly."
+            str_to_class(x).lookAtT="The class is in session.\n"
+            '"Ah, a latecomer! Come on in!" The teacher beacons you over.'
+        teacher.askT="You have a question on your mind, but you don't want to interrupt\n" \
+                     " the teacher in the middle of their explanation..."
