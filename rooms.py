@@ -70,12 +70,13 @@ class Stairs(Room):
 
 class Hallway(Room):
     def __init__(self,name,coor,exitsL,synonyms,takeD={},
-                 lookL=[],useL=["key"], shortT = "You are in a hallway.", longT="",
+                 lookL=[],askL=[],useL=["key"], shortT = "You are in a hallway.", longT="",
                  locked=False):
         self.name = name
         self.coor = coor
         self.classroomNumber = self.name[-3:]
         self.useL = useL
+        self.askL = askL
         self.lookL = lookL
         self.shortT = shortT
         self.longT = longT
@@ -90,7 +91,7 @@ class Hallway(Room):
 
         if self.name.endswith("1"):
             self.longT=f"To your north is classroom {self.classroomNumber}.\n" \
-                       f"To your east is the stairwell.\n" \
+                       f"To your east is the hall section with the stairs.\n" \
                        f"The hallway continues to your west."
         elif self.name.endswith("2"):
             self.longT=f"To your north is classroom {self.classroomNumber}.\n" \
@@ -100,7 +101,7 @@ class Hallway(Room):
                   f"This is the end of the hallway. You can go back east."
         elif self.name.endswith("4"):
             self.longT=f"To your east is classroom {self.classroomNumber}.\n" \
-                  f"To your north is the stairwell.\n" \
+                  f"To your north is the hall section with the stairs.\n" \
                   f"The hallway continues to your south."
         elif self.name.endswith("5"):
             self.longT=f"To your east is classroom {self.classroomNumber}.\n" \
@@ -136,6 +137,33 @@ class lockedRoom(Room):
         #special
         if self.name == "room105" and findBreakRoom.done is False:
             findBreakRoom.complete()
+
+class wrongRoom(Room):
+    def __init__(self, coor, name, synonyms, subject, useL=["pen","laptop"], askL=["teacher"],
+                 takeD={}, shortT="You are in a classroom.", longT="", lookL=["list","whiteboard"], exitsL=[],
+                 locked=False,
+                 lookAtT=""):
+        self.coor = coor
+        self.name = name
+        self.shortT = shortT
+        self.longT = longT
+        self.lookL = lookL
+        self.subject = subject
+        self.exitsL = exitsL
+        self.useL = useL
+        self.locked = locked
+        self.askL = askL
+        self.takeD = takeD
+        self.lookAtT = lookAtT
+        self.synonyms = synonyms
+        self.synonyms.append(self.name)
+        roomCoorD[self.coor] = self.name
+        synonymsD[self.name] = self.synonyms
+        self.exitsL = ["s"] if self.name.endswith(("1","2","3")) else ["w"]
+
+    def lookAt(self):
+        print(f"The door is open and the lights are on. You look inside {self.name[-3:]}.")
+        print(self.lookAtT)
 
 #FIRST FLOOR HALLWAYS
 hallway101 = Hallway(
@@ -305,7 +333,7 @@ toilets = Room(
     coor=(1,1,1),
     shortT= "You enter the lavatory.",
     longT="> You can use the toilets here.\n"
-          "To your west is the stairwell. It's the only exit.",
+          "To your west is the hallway. It's the only exit.",
     lookL=["toilet"],
     exitsL = ["w"],
     useL=["toilet"],
@@ -434,6 +462,56 @@ room306 = lockedRoom(
     name="room306",
     coor=(1,-2,3),
     synonyms=["306"]
+)
+
+room101=wrongRoom(  # project management
+    name="room101",
+    coor=(-1,2,1),
+    synonyms=["101"],
+    subject={"    ...best practises when designing Gantt charts!":3},
+    lookAtT="There's a teacher with a friendly expression on her face writing something on the whiteboard.\n"
+            '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
+    longT="There's a teacher with a friendly expression on her face writing something on the whiteboard.", #todo: make different for every wrongroom
+)
+
+room201=wrongRoom(  # body language
+    name="room201",
+    coor=(-1,2,2),
+    synonyms=["201"],
+    subject={"    ...how to show confidence in a stressful situation!":3},
+    lookAtT="There's a teacher with a confident expression on her face writing something on the whiteboard.\n"
+            '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
+    longT="There's a teacher with a confident expression on her face writing something on the whiteboard.", #todo: make different for every wrongroom
+)
+
+room203=wrongRoom(  # social media consultant
+    name="room203",
+    coor=(-3,2,2),
+    synonyms=["203"],
+    subject={"    ...how to set quantitative targets for your SME's social media campaign!":3},
+    lookAtT="There's a teacher with a determined expression on her face writing something on the whiteboard.\n"
+            '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
+    longT="There's a teacher with a determined expression on her face writing something on the whiteboard.", #todo: make different for every wrongroom
+)
+
+room303=wrongRoom(  # vitality coach
+    name="room303",
+    coor=(-3,2,3),
+    synonyms=["303"],
+    subject={"    ...how to find the work-life balance that works for you!":3},
+    lookAtT="There's a teacher with an energetic expression on her face writing something on the whiteboard.\n"
+            '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
+    longT="There's a teacher with an energetic expression on her face writing something on the whiteboard.", #todo: make different for every wrongroom
+)
+
+room305=wrongRoom(  # dog massage for beginners
+    name="room305",
+    coor=(1,-1,3),
+    synonyms=["305"],
+    subject={"    ...how to reduce your pet's stress levels during a thunderstorm!":3},
+    lookAtT="There's a teacher with a crazed expression on her face writing something on the whiteboard.\n"
+            '"Come in, come in!" She beacons you over.', #todo: make different for every wrongroom
+    longT="There's a teacher with a crazed expression on her face writing something on the whiteboard.", #todo: make different for every wrongroom
 )
 
 exit = Room(

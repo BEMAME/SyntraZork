@@ -1,11 +1,14 @@
 synonymsD = {}  # dict with synonyms for all entities, is populated by entity init
 
-
 class Entity:
-    def __init__(self, name, lookT, synonyms, tooHeavy=False,consumeOnUse=False, useRoom=["ANY"], useT=""):
+    def __init__(self, name, lookT, synonyms,
+                 useTime="short",askTime="short",
+                 tooHeavy=False,consumeOnUse=False, useRoom=["ANY"], useT=""):
         self.name = name
         self.lookT = lookT
         self.synonyms = synonyms
+        self.useTime = useTime
+        self.askTime = askTime
         self.tooHeavy = tooHeavy
         self.synonyms.append(self.name)
         self.consumeOnUse = consumeOnUse
@@ -68,8 +71,10 @@ class Entity:
                     room105.locked = False
                 else:
                     print("The door is already unlocked!")
+            return True
         else:
             print("You can't use that here.")
+            return False
 
 class Thing(Entity):
     def __init__(self, onlyOne=True, *args, **kwargs):
@@ -108,13 +113,14 @@ class Person(Entity):
         self.tooHeavy = tooHeavy
 
     def hello(self):
+        print(f"You greet the {self.name}.")
         print(self.helloT)
 
     def ask(self):
         from rooms import bar
         if player.drinks > 3:
             print(f"You ask the {self.name} where the toilets are.\n"
-                  f'"First floor, east from the stairwell." You thank them for this critical information.')
+                  f'"First floor, east from the stairs." You thank them for this critical information.')
         elif self.name == "receptionist" and findClassRoom.done is False:
             print(self.askT)
             findClassRoom.complete()
@@ -131,15 +137,17 @@ class Person(Entity):
         elif self.name == "student":
             print(self.askT)
             studentChat.complete()
+            player.thingsLearned["    ...a few useful Python hotkeys!"] = 2
         else:
             print(self.askT)
 
 
 
 class Protagonist:
-    def __init__(self, currentRoom="lobby", classComplete=False, nStairsClimbed=0,
-                 score=0, drinks=0, inv={"laptop","bottle","key"}): #todo remove key
+    def __init__(self, currentRoom="lobby",thingsLearned = {}, classComplete=False, nStairsClimbed=0,
+                 score=0, drinks=0, inv={"laptop","bottle"}):
         self.currentRoom = currentRoom
+        self.thingsLearned = thingsLearned
         self.classComplete = classComplete
         self.nStairsClimbed = nStairsClimbed
         self.score = score
@@ -248,7 +256,8 @@ getPen = Objective(
 )
 
 breakroomOpened = Objective(
-    completeT="> You've unlocked the breakroom!",
+    completeT="You've unlocked the breakroom!\n"
+              "The other student walks steps inside.",
     score=2,
     completeRoom=["hallway105"],
     repeatable=False
@@ -276,7 +285,8 @@ shareCoffee = Objective(
 
 getBeer = Objective(
     completeT="Without a word, the barkeep gives you one of the heavy beers on display.\n"
-              "> You have a beer! Remember to drink responsibly.",
+              "> You have a beer! Remember to drink responsibly.\n"
+              "> Drinking this dégustation beer will take a few minutes.",
     score=1,
     completeRoom=["ANY"]
 )
@@ -337,8 +347,8 @@ drinkBeerAfter = Objective(
 )
 
 manyStairsClimbed = Objective(
-    completeT="You getting tired from walking up all these the stairs...",
-    score=-1,
+    completeT="You're getting tired from walking up all these the stairs...",
+    score=0,
     completeRoom=["ANY"],
     repeatable=True,
     repeatT="You've already climbed xtraTxt stairs today...  Your programmer's muscles ache.",
@@ -376,7 +386,8 @@ bladderRelief = Objective(
 )
 
 baristaAnnoyed = Objective(
-    completeT=f"\"Look, I'm closing up here. Don't you have a class to attend to?\"\n"
+    completeT=f"The barista looks up at you.\n"
+              f"\"Look, I'm closing up here. Don't you have a class to attend to?\"\n"
                   "> The barkeep wants to close shop.",
     score=0,
     repeatable=True,
@@ -386,6 +397,10 @@ baristaAnnoyed = Objective(
     repeatScore=-1,
     completeRoom=["bar"]
 )
+
+#learn203 = Objective(
+
+#)
 
 receptionist = Person(
     name="receptionist",
@@ -399,9 +414,9 @@ receptionist = Person(
 barista = Person(
     name="barista",
     lookT="The barkeep is washing up. He does not look up at you.",
-    helloT='The barkeep shakes off his hands. "Sup?"',
+    helloT='The barkeep shakes the water off his hands without looking up.',
     synonyms=["barkeep","bartender","barkeeper","server","barman","staff"],
-    askT='You ask what you can [get] here. "Beer, coffee?\n"'
+    askT='You ask what you can [get] here. "Beer, coffee?"\n'
          '> The barkeep seems somewhat impatient...'
 )
 
@@ -412,13 +427,13 @@ key = Thing(name="key",
 
 pen = Thing(name="pen",
             lookT="The Syntra-branded pen you got from the reception desk.",
-            synonyms=[],
+            synonyms=["room102","room101","room203","room201","room303","room305"],
             consumeOnUse=False)
 
 laptop = Thing(name="laptop",
                lookT="You look at your tiny laptop. It can barely run PyCharm.",
                synonyms = ["computer"],
-               #useRoom= classroom,
+               useRoom= ["room102"],
                consumeOnUse=False)
 
 bottle = Thing(name="bottle",
@@ -463,28 +478,31 @@ tea = Thing(name="tea",
             consumeOnUse=True)
 
 beer = Thing(name="beer",
-             lookT="A specialty beer. Is this the right time to open it?",
+             lookT="A specialty beer. Is this the right time to open it?\n"
+                   "> Drinking this dégustation beer will take a few minutes.",
              useT="You drink the beer.",
              onlyOne=False,
              synonyms=[],
-             consumeOnUse=True)
+             consumeOnUse=True,
+             useTime="long")
 
 toilet = Entity(name="toilet",
-               tooHeavy=True,
-               lookT="Sparkling clean! Very inviting.",
-               synonyms=["lavatory","wc"],
-               useT=""
-               )
+                tooHeavy=True,
+                lookT="Sparkling clean! Very inviting.",
+                synonyms=["lavatory","wc"],
+                useT="",
+                useTime="medium"
+                )
 
 student = Person(name="student",
-                 helloT="Hi. Word of warning about the tea: it's cold.",
+                 helloT='"Hi. Word of warning about the tea: it\'s cold."',
                  lookT="The student takes a sip from their cup of tea. It's clear they are not enjoying it.",
                  synonyms=[],
-                 askT="You ask the other student about their experience with Python.")
+                 askT="You ask the other student about their experience with Python.",
+                 askTime="long")
 
 teacher = Person(name="teacher",
                  helloT="Welcome!",
                  lookT="The teacher looks up at you.",
                  synonyms=[],
                  askT="You ask a poignant question about Python.")
-
