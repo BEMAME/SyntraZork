@@ -61,9 +61,9 @@ class Entity:
                 player.inv.add("tea")
             elif self.name == "beer":
                 player.drinks += 3
-                if player.classComplete is True or player.currentRoom.name=="room105":
+                if player.thingsLearned:  # you have learned something
                     drinkBeerAfter.complete()
-                else:
+                else:  # you have learned nothing
                     drinkBeer.complete()
                 player.bladderCheck()
             elif self.name == "toilet":
@@ -169,6 +169,13 @@ class Person(Entity):
                   '"Oh ofcourse! Room 105."')
             findBreakRoom.complete()
             return True
+
+        elif self.name == "student" and player.currentRoom.name=="room102" and installPyCharm.done is False:
+            print(f"You ask the student if you were supposed to install anything for the Python class.\n"
+                  '"Why, PyCharm ofcourse! Didn\'t you read the email that was sent out yesterday?"\n'
+                  '> You can [use] your laptop to install PyCharm.')
+
+
         elif self.name == "student" and player.currentRoom.name=="room105":
             print(self.askT)
             studentChat.complete()
@@ -202,12 +209,13 @@ class Person(Entity):
 
 class Protagonist:
     def __init__(self, currentRoom="lobby",thingsLearned = {}, classComplete=False, nStairsClimbed=0,
-                 score=0, drinks=0, inv={"laptop","bottle"}):
+                 score=0, drinks=0, inv={"laptop","bottle"}, notInClassOnTime=False):
         self.currentRoom = currentRoom
         self.thingsLearned = thingsLearned
         self.classComplete = classComplete
         self.nStairsClimbed = nStairsClimbed
         self.score = score
+        self.notInClassOnTime = notInClassOnTime
         self.drinks = drinks
         self.inv = inv
 
@@ -295,14 +303,14 @@ inClassroomOnTime = Objective(
 
 notInClassroomOnTime = Objective(
     completeT='"Why hello there..." The teacher stops in the middle of their explanation.\n'
-              '"Quickly grab yourself a seat, will you?"'
+              '"Quickly grab yourself a seat, will you?"\n'
               "> You didn't get to class on time...",
-    score=-2,
+    score=-1,
     completeRoom=["ANY"],
     repeatable=True,
-    repeatT="Once more, the class has already started when you stroll into the room.\n"
-            "The student tuts you.",
-    repeatScore=-3
+    repeatT="Once more you walk into class while it is in session.\n"
+            "The student tut-tuts you.",
+    repeatScore=0
 )
 
 findClassRoom = Objective(
@@ -517,7 +525,7 @@ manyStairsClimbed = Objective(
     completeRoom=["ANY"],
     repeatable=True,
     repeatT="You've already climbed xtraTxt stairs today...  Your programmer's muscles ache.",
-    repeatScore=-1
+    repeatScore=0
 )
 
 timetravel = Objective(
@@ -646,6 +654,13 @@ learnDogMassa2 = Objective(
     completeRoom="room305"
 )
 
+emotions = Objective(
+    completeT=f"> You showed an emotion!",
+    score=1,
+    repeatable=False,
+    confirmT="You are a well of emotion.",
+    completeRoom=["ANY"]
+)
 
 receptionist = Person(
     name="receptionist",
@@ -666,8 +681,9 @@ barista = Person(
 )
 
 key = Thing(name="key",
-            lookT="An unremarkable key with a large keychain.",
-            synonyms=[],
+            lookT='"An unremarkable key with a large keychain.\n'
+                  'The keychain reads: "B R E A K  R O O M"',
+            synonyms=["keychain","keys"],
             useRoom="hallway105")
 
 pen = Thing(name="pen",
@@ -679,7 +695,7 @@ laptop = Thing(name="laptop",
                lookT="You look at your tiny laptop. It can barely run PyCharm.",
                synonyms = ["computer"],
                useRoom= ["room102"],
-               useT="",
+               useT="You check your emails.",
                useTime="long",
                consumeOnUse=False)
 
@@ -752,9 +768,7 @@ student = Person(name="student",
                  helloT='"Hi. Word of warning about the tea here: it\'s always cold."',
                  lookT="The student takes a small sip from their cup of tea.",
                  synonyms=[],
-                 askT="You ask the student if you were supposed to install anything for the Python class.\n"
-                      '"Why, PyCharm ofcourse! Didn\'t you read the email that was sent out yesterday?"\n'
-                      '> You can [use] your laptop to install PyCharm.',
+                 askT="You have a mundane conversation with the student.",
                  askTime="short"
 )
 

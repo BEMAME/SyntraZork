@@ -56,8 +56,10 @@ class Room:
             return True
 
     def enter(self): #enters the new room, prints the new room's name and looks around
+
         print(self.shortT)
         print(self.longT)
+
         return str_to_class(self.name)
 
 
