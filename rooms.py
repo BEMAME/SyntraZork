@@ -418,7 +418,7 @@ room105 = lockedRoom(
     shortT= "You are in the breakroom.",
     longT= "There's a large aluminium dispenser on the table, as well as several cups.\n"
            "The other student is looking at the dispenser as if they hold a grudge against it.\n"
-           "The exit is to your east.",
+           "The exit is to your west.",
     lookL= ["dispenser","student"],
     askL=["student"],
     useL=["dispenser"],

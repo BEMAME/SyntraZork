@@ -159,6 +159,9 @@ class GameC:
             print("You return the breakroom key to the reception.")
             player.inv.remove("key")
             player.changeScore(1)
+            receptionist.helloT = '"Have a nice evening."'
+            receptionist.askT = '"Have a nice evening."'
+            return True
 
         if inp.split()[0].lower() == "wait":
             if len(inp.split()) == 1:
@@ -279,7 +282,7 @@ class GameC:
             elif x in player.inv:
                 print(f"{x.capitalize()} isn't feeling very talkative.")
             else:
-                print(f"No {x} in sight. Is this what lonelyness feels like?")
+                print(f"No {x} in sight. Is this what loneliness feels like?")
 
         return True
 
@@ -554,13 +557,14 @@ while True:
                      '"Enthousiastic about the course material, eh? Have a rest, we can answer your question next week."'
         teacher.lookT="The teacher is packing up."
 
-        receptionist.askT='When the receptionist sees you, she looks up.\n' \
-                          '"Oh, excuse me! We\'re still missing one breakroom key..."' \
-                          '> You should [return key] to the reception. It\'s useless to you anyway...'
+        if "key" in player.inv:
+            receptionist.askT="When the receptionist sees you, she looks up.\n" \
+                              "Oh, excuse me! We\'re still missing one breakroom key...\n" \
+                              "> You should [return key] to the reception. It\'s useless to you anyway..."
 
-        receptionist.helloT='When the receptionist sees you, she looks up.\n' \
-                          '"Oh, excuse me! We\'re still missing one breakroom key..."' \
-                          '> You should [return key] to the reception. It\'s useless to you anyway...'
+            receptionist.helloT="When the receptionist sees you, she looks up.\n" \
+                                "Oh, excuse me! We\'re still missing one breakroom key...\n" \
+                                "> You should [return key] to the reception. It\'s useless to you anyway..."
 
         if penBorrowed.done is True:
             time.sleep(1)
@@ -591,20 +595,21 @@ while True:
             player.notInClassOnTime=True
 
         for x in allRoomL:
-            str_to_class(x).longT = f"The exit is to your south." \
-                                    f"\nA teacher is in the middle of an explanation." \
-                                    f"\nA student is eagerly paying attention." \
-                                    f"\n> Type [learn] to pay attention to class. Time will proceed rapidly."
-            str_to_class(x).lookAtT = "The class is in session.\n"
-            '"Ah, a latecomer! Come on in!" The teacher beacons you over.'
+            str_to_class(x).longT ="The exit is to your south.\n" \
+                                   "A teacher is in the middle of an explanation.\n" \
+                                   "A student is eagerly paying attention.\n" \
+                                   "> Type [learn] to pay attention to class. Time will proceed rapidly."
+            str_to_class(x).lookAtT = "The class is in session.\n" \
+                                      "Ah, a latecomer! Come on in!\n" \
+                                      "The teacher beacons you over."
             str_to_class(x).askL=["teacher","student"]
             str_to_class(x).lookL=["teacher","student"]
 
 
         teacher.askT = "You have a question on your mind, but you don't want to interrupt\n" \
                        "the teacher in the middle of their explanation..."
-        room105.lookAtT="The lights are on, but nobody's there.\n" \
-                        "You spot a large, insulated dispenser on one of the tables, alongside some cups."
+        room105.lookAtT = "The lights are on, but nobody's there.\n" \
+                          "You spot a large, insulated dispenser on one of the tables, alongside some cups."
 
         findBreakRoom.active = False
 
@@ -614,7 +619,12 @@ while True:
         drinkCoffee.done = False
         player.notInClassOnTime = False
 
-        #todo bar closed but beer still there
+        lobby.exitsL.remove("w")
+        lobby.longT="Someone is manning the reception desk.\n" \
+                    "A massive digital display is hanging up high.\n" \
+                    "To the north is an ascending staircase to the first floor.\n" \
+                    "To the south is the exit of the building.\n" \
+                    "The bar is closed."
 
         if player.currentRoom.name in allRoomL:
             print('The teacher concludes: "... but we\'ll let that sink in for now.'
@@ -625,13 +635,13 @@ while True:
 
         for x in allRoomL:
             str_to_class(x).useL=["register"]
-            str_to_class(x).longT=f"The exit is to your south." \
-                                  f"\nClass is in recess. Only the teacher is present - they are checking their emails."
-            str_to_class(x).lookAtT="The class is in recess. Only the teacher is present"
+            str_to_class(x).longT="The exit is to your south.\n" \
+                                  "Class is in recess. Only the teacher is present - they are checking their emails."
+            str_to_class(x).lookAtT="The class is in recess. Only the teacher is present."
             str_to_class(x).askL=["teacher"]
             str_to_class(x).lookL=["teacher","key","register"]
 
-        teacher.askT='You ask the teacher where the breakroom is.\n' \
+        teacher.askT="You ask the teacher where the breakroom is.\n" \
                      '"Good question that. Best to ask the reception desk."'
         findBreakRoom.active=True
         teacher.lookT="The teacher is checking their emails."
@@ -649,11 +659,12 @@ while True:
             player.notInClassOnTime = True
 
         for x in allRoomL:
-            str_to_class(x).longT=f"The exit is to your south." \
-                                  f"\nA teacher is in the middle of an explanation." \
-                                  f"\nA student is eagerly paying attention." \
-                                  f"\n> Type [learn] to pay attention to class. Time will proceed rapidly."
-            str_to_class(x).lookAtT="The class is in session.\n"
-            '"Ah, a latecomer! Come on in!" The teacher beacons you over.'
-        teacher.askT="You have a question on your mind, but you don't want to interrupt\n" \
-                     " the teacher in the middle of their explanation..."
+            str_to_class(x).longT="The exit is to your south.\n" \
+                                  "A teacher is in the middle of an explanation.\n" \
+                                  "A student is eagerly paying attention.\n" \
+                                  "> Type [learn] to pay attention to class. Time will proceed rapidly."
+            str_to_class(x).lookAtT="The class is in session.\n" \
+                                    "Ah, a latecomer! Come on in!\n" \
+                                    "The teacher beacons you over."
+            teacher.askT="You have a question on your mind, but you don't want to interrupt\n" \
+                         "the teacher in the middle of their explanation..."

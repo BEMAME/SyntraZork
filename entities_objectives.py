@@ -152,7 +152,7 @@ class Person(Entity):
             print(f"You ask the {self.name} where the toilets are.\n"
                   f'"First floor, east from the stairs." You thank them for this critical information.')
             return True
-        elif self.name == "receptionist" and findClassRoom.done is False:
+        elif self.name == "receptionist" and findClassRoom.done is False and madeIt.done is False:
             print(self.askT)
             findClassRoom.complete()
             return True
@@ -430,7 +430,7 @@ madeIt = Objective(
 
 breakroomOpened = Objective(
     completeT="You've unlocked the breakroom!\n"
-              "The other student walks steps inside.",
+              "The other student steps inside.",
     score=2,
     completeRoom=["hallway105"],
     repeatable=False
@@ -759,7 +759,7 @@ beer = Thing(name="beer",
 toilet = Entity(name="toilet",
                 tooHeavy=True,
                 lookT="Sparkling clean! Very inviting.",
-                synonyms=["lavatory","wc"],
+                synonyms=["lavatory","wc","toilets"],
                 useT="",
                 useTime="medium"
                 )
