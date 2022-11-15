@@ -142,7 +142,7 @@ class Person(Entity):
         print(f"You greet the {self.name}.")
         print(self.helloT)
 
-    def ask(self):  # returns true if succesfull ask
+    def ask(self):  # returns true if succesful ask
         from rooms import bar
 
         if self.name == "student":
@@ -159,6 +159,10 @@ class Person(Entity):
         elif self.name == "barista" and baristaAnnoyed.done is True:
             baristaAnnoyed.complete()
             return True
+        elif self.name == "barista" and "beer" in player.inv and "coffee" in player.inv and baristaAnnoyed.done is False:
+            baristaAnnoyed.complete()
+            return True
+
         elif self.name == "barista" and bar.takeD == {}:
             print(f"You ask the barista if you can get anything else.")
             baristaAnnoyed.complete()
