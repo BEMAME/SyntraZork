@@ -79,7 +79,7 @@ class GameC:
               "[i] to show a list of items that you have with you\n"
               "[score] to display your current score\n"
               "[time] to look at the time\n"
-              "[timeVerbose] to toggle updates on time passing off or on (default is off)\n"
+              "[timeVerbose] to toggle updates on time passing off or on (default is off - best experience)\n"
               "[wait <number>] to wait a number of minutes you specify\n"
               "[q] to quit (or better: walk outside of the building)")
 
@@ -165,7 +165,7 @@ class GameC:
 
         if inp.split()[0].lower() == "wait":
             if len(inp.split()) == 1:
-                print("How many minutes do you want to wait?")
+                print("I do not understand. Type [wait] followed by the number of minutes you want to wait.")
                 return True
 
             try:  # check if integer
@@ -179,8 +179,8 @@ class GameC:
             if x < datetime.timedelta(seconds=0):
                 timetravel.complete()
                 return True
-            elif x > datetime.timedelta(minutes=10):
-                print("You can only wait up to 10 min at a time. Wouldn't want you to get bored!")
+            elif x > datetime.timedelta(minutes=15):
+                print("You can only wait up to 15 min at a time. Wouldn't want you to get bored!")
                 return True
             else:
                 y = input(f"> Are you sure you want to wait {round(x.seconds/60)} minutes?\n"
